@@ -44,12 +44,32 @@ Meta_Kim 不站这个方向。
 
 ## 如果你要看发布版行业层，直接看这些
 
-- [`factory/README.zh-CN.md`](factory/README.zh-CN.md)
 - [`factory/industry-coverage-matrix.md`](factory/industry-coverage-matrix.md)
 - [`factory/flagship-20.md`](factory/flagship-20.md)
 - [`factory/agent-library/`](factory/agent-library)
-- [`factory/flagship-complete/README.zh-CN.md`](factory/flagship-complete/README.zh-CN.md)
-- [`factory/runtime-packs/README.zh-CN.md`](factory/runtime-packs/README.zh-CN.md)
+- [`factory/flagship-complete/agents/`](factory/flagship-complete/agents)
+- [`factory/flagship-complete/index.json`](factory/flagship-complete/index.json)
+- [`factory/runtime-packs/`](factory/runtime-packs)
+- [`factory/runtime-packs/summary.json`](factory/runtime-packs/summary.json)
+
+发布版里所有“解释项目是什么、目录怎么读”的说明，我都收回根目录 README 了。  
+`factory/` 下面只保留内容、索引和运行时资产，不再放二级说明书。
+
+### `factory/` 发布地图
+
+`factory/` 里面真正的发布主层只有 3 个目录：
+
+- `agent-library/`：完整的 100 个部门 + 1000 个 specialist 人类可读库
+- `flagship-complete/`：20 个旗舰成品层
+- `runtime-packs/`：Claude Code / Codex / OpenClaw 三端导入层
+
+`factory/` 根部剩下那些文件，不是第二套说明书，而是索引和协议：
+
+- `industry-coverage-matrix.md`：行业和部门覆盖总表
+- `flagship-20.md`：第一批 20 个旗舰部门 seed 总表
+- `organization-map.json`：机器可读组织图
+- `department-call-protocol.json`：默认路由与 handoff 规则
+- `orchestration-playbooks.md`：跨部门协作流程
 
 ## 这项目到底在立什么
 
@@ -394,6 +414,7 @@ Meta_Kim/
 ├─ codex/          Codex 全局配置示例，不是另一套运行时
 ├─ openclaw/       OpenClaw workspace、模板配置、运行时镜像
 ├─ factory/        发布版行业 agent 层：agent 库、20 个旗舰、协议文件、运行时包
+├─ images/         README 用的公开图片资源
 ├─ scripts/        同步、校验、MCP、自检、OpenClaw 本地准备脚本
 ├─ shared-skills/  跨运行时共享的技能镜像
 ├─ AGENTS.md       Codex / 通用运行时入口说明
@@ -402,6 +423,22 @@ Meta_Kim/
 ├─ README.md       英文主 README
 └─ README.zh-CN.md 中文 README
 ```
+
+如果你只关心“GitHub 上真正发布什么”，最该看的就是：
+
+- `.claude/`
+- `.codex/`
+- `.agents/`
+- `openclaw/`
+- `factory/`
+- `scripts/`
+- `shared-skills/`
+
+你在自己电脑上可能还会看到一些本地目录，但它们不是公开发布面：
+
+- `meta/`：本地研究稿和草稿，已忽略
+- `image/`：本地截图/临时导出目录，已忽略
+- `node_modules/`：本地依赖目录，已忽略
 
 ### 为什么会有 `codex/`
 

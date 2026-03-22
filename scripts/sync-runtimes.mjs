@@ -214,14 +214,6 @@ function buildMemory(agent) {
 `;
 }
 
-function buildMemoryDirectoryNote(agent) {
-  return `# memory/README.md - ${agent.id}
-
-OpenClaw 的 \`session-memory\` hook 会把需要保留的会话快照写到这里。
-这个目录属于运行时沉淀层，不是主源；如需修改策略，请先改 \`MEMORY.md\` 与 Claude 主源提示词。
-`;
-}
-
 async function readJsonIfExists(filePath) {
   try {
     return JSON.parse(await fs.readFile(filePath, "utf8"));
@@ -579,10 +571,6 @@ async function main() {
         buildHeartbeat(agent)
       ),
       writeGeneratedFile(path.join(workspaceDir, "TOOLS.md"), buildTools(agent, agents)),
-      writeGeneratedFile(
-        path.join(workspaceDir, "memory", "README.md"),
-        buildMemoryDirectoryNote(agent)
-      ),
       writeGeneratedFile(
         path.join(workspaceDir, "skills", "meta-theory", "SKILL.md"),
         portableSkill

@@ -160,15 +160,13 @@ The release now exposes:
 
 The final public surfaces are:
 
-- [`factory/README.md`](factory/README.md)
-- [`factory/README.zh-CN.md`](factory/README.zh-CN.md)
 - [`factory/industry-coverage-matrix.md`](factory/industry-coverage-matrix.md)
 - [`factory/flagship-20.md`](factory/flagship-20.md)
 - [`factory/agent-library/`](factory/agent-library)
-- [`factory/flagship-complete/README.md`](factory/flagship-complete/README.md)
-- [`factory/flagship-complete/README.zh-CN.md`](factory/flagship-complete/README.zh-CN.md)
-- [`factory/runtime-packs/README.md`](factory/runtime-packs/README.md)
-- [`factory/runtime-packs/README.zh-CN.md`](factory/runtime-packs/README.zh-CN.md)
+- [`factory/flagship-complete/agents/`](factory/flagship-complete/agents)
+- [`factory/flagship-complete/index.json`](factory/flagship-complete/index.json)
+- [`factory/runtime-packs/`](factory/runtime-packs)
+- [`factory/runtime-packs/summary.json`](factory/runtime-packs/summary.json)
 
 Read it this way:
 
@@ -176,12 +174,41 @@ Read it this way:
 - `factory/runtime-packs/` is the full machine-facing 1100-agent import surface
 - `factory/flagship-complete/` is the curated 20-agent polished layer
 
+Inside the public release, explanation stays in the root README files.  
+The `factory/` subdirectories are for assets, indexes, and runtime packs, not nested user manuals.
+
+### Factory Release Map
+
+Inside `factory/`, only 3 directories are primary release surfaces:
+
+- `agent-library/`: the full 100 department + 1000 specialist human-readable library
+- `flagship-complete/`: the curated 20-agent polished layer
+- `runtime-packs/`: the full Claude Code / Codex / OpenClaw import surface
+
+The remaining top-level files in `factory/` are support indexes and protocols:
+
+- `industry-coverage-matrix.md`: coverage map by industry and department
+- `flagship-20.md`: shortlist of the first 20 flagship department seeds
+- `organization-map.json`: machine-readable org map
+- `department-call-protocol.json`: default routing and handoff rules
+- `orchestration-playbooks.md`: cross-department operating flows
+
 ## Public vs Private Research
 
 The long-form local research manuscript under `meta/` is intentionally not part of the public GitHub payload.
 
 This public repository ships the runtime-facing architecture and production tooling.  
 Private research notes stay local.
+
+## What You May See Locally But Will Not Ship to GitHub
+
+If you open the repository on your own machine, you may still see some local-only folders.
+
+- `meta/`: local research manuscript and drafting notes, gitignored
+- `image/`: local screenshot/temp export folder, gitignored
+- `node_modules/`: local dependency cache, gitignored
+
+These are not part of the public release surface.
 
 ## Repository Map
 
@@ -193,6 +220,7 @@ Meta_Kim/
 ├─ codex/          Global Codex config example, not a second runtime
 ├─ openclaw/       OpenClaw workspaces, templates, and runtime mirrors
 ├─ factory/        Published foundry release: agent library, flagship bundle, runtime packs
+├─ images/         Public repository assets used by the README
 ├─ scripts/        Sync, validation, MCP, evaluation, and local runtime helper scripts
 ├─ shared-skills/  Shared skill mirrors across runtimes
 ├─ AGENTS.md       Codex and cross-runtime orientation
@@ -201,6 +229,16 @@ Meta_Kim/
 ├─ README.md       English primary README
 └─ README.zh-CN.md Chinese README
 ```
+
+If you only care about the open-source release surface, the directories that matter most are:
+
+- `.claude/`
+- `.codex/`
+- `.agents/`
+- `openclaw/`
+- `factory/`
+- `scripts/`
+- `shared-skills/`
 
 ## Why There Is a `codex/` Folder
 

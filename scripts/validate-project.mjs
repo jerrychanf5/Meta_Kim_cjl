@@ -127,19 +127,14 @@ async function validateRequiredFiles() {
     "openclaw/skills/meta-theory.md",
     "openclaw/openclaw.template.json",
     "codex/config.toml.example",
-    "factory/README.md",
-    "factory/README.zh-CN.md",
     "factory/industry-coverage-matrix.md",
     "factory/flagship-20.md",
     "factory/department-call-protocol.json",
     "factory/orchestration-playbooks.md",
     "factory/organization-map.json",
     "factory/agent-library/agent-index.json",
-    "factory/flagship-complete/README.md",
-    "factory/flagship-complete/README.zh-CN.md",
+    "factory/flagship-complete/index.json",
     "factory/flagship-complete/summary.json",
-    "factory/runtime-packs/README.md",
-    "factory/runtime-packs/README.zh-CN.md",
     "factory/runtime-packs/summary.json",
     "scripts/mcp/meta-runtime-server.mjs",
     "scripts/eval-meta-agents.mjs",
@@ -264,16 +259,6 @@ async function validateOpenClawArtifacts(agentIds) {
         `Missing OpenClaw workspace skill reference: ${path.relative(repoRoot, workspaceReference)}`
       );
     }
-    const memoryReadme = path.join(
-      openclawWorkspacesDir,
-      agentId,
-      "memory",
-      "README.md"
-    );
-    assert(
-      await exists(memoryReadme),
-      `Missing OpenClaw workspace memory note: ${path.relative(repoRoot, memoryReadme)}`
-    );
   }
 }
 
@@ -460,7 +445,22 @@ async function validateFactoryRelease() {
     "scripts/build-flagship-batch-2.mjs",
     "scripts/build-flagship-batch-3.mjs",
     "scripts/build-flagship-batch-4.mjs",
-    "scripts/build-flagship-complete.mjs"
+    "scripts/build-flagship-complete.mjs",
+    "factory/README.md",
+    "factory/README.zh-CN.md",
+    "factory/flagship-complete/README.md",
+    "factory/flagship-complete/README.zh-CN.md",
+    "factory/runtime-packs/README.md",
+    "factory/runtime-packs/README.zh-CN.md",
+    "factory/flagship-20.json",
+    "openclaw/workspaces/meta-artisan/memory/README.md",
+    "openclaw/workspaces/meta-conductor/memory/README.md",
+    "openclaw/workspaces/meta-genesis/memory/README.md",
+    "openclaw/workspaces/meta-librarian/memory/README.md",
+    "openclaw/workspaces/meta-prism/memory/README.md",
+    "openclaw/workspaces/meta-scout/memory/README.md",
+    "openclaw/workspaces/meta-sentinel/memory/README.md",
+    "openclaw/workspaces/meta-warden/memory/README.md"
   ];
 
   for (const relativePath of legacyPaths) {
@@ -480,10 +480,6 @@ async function validateFactoryRelease() {
   );
   const flagshipCount = await countFiles(
     path.join(repoRoot, "factory", "flagship-complete", "agents"),
-    ".md"
-  );
-  const flagshipIndexCount = await countFiles(
-    path.join(repoRoot, "factory", "flagship-20"),
     ".md"
   );
   const runtimeClaudeCount = await countFiles(
@@ -517,7 +513,6 @@ async function validateFactoryRelease() {
   assert(departmentCount === 100, `Expected 100 department briefs, found ${departmentCount}.`);
   assert(specialistCount === 1000, `Expected 1000 specialist briefs, found ${specialistCount}.`);
   assert(flagshipCount === 20, `Expected 20 flagship agents, found ${flagshipCount}.`);
-  assert(flagshipIndexCount === 20, `Expected 20 flagship index files, found ${flagshipIndexCount}.`);
   assert(runtimeClaudeCount === 1100, `Expected 1100 Claude runtime packs, found ${runtimeClaudeCount}.`);
   assert(runtimeCodexCount === 1100, `Expected 1100 Codex runtime packs, found ${runtimeCodexCount}.`);
   assert(runtimeOpenClawCount === 1100, `Expected 1100 OpenClaw workspaces, found ${runtimeOpenClawCount}.`);
