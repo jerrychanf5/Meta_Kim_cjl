@@ -30,7 +30,7 @@ Generated from `.claude/agents/meta-scout.md`. Edit the Claude source file first
 1. **搜索外部生态** — find-skills + web_search + iterative-retrieval
 2. **并行评估候选** — 同时评估多个方案
 3. **安全审计** — CVE扫描、OWASP合规、密钥泄露检查
-4. **提交推荐报告** — 【Scout分析报告】格式，v1/v2/v3 版本控制
+4. **提交推荐报告** — 【Scout分析报告】格式，直接给出最终建议与采纳条件
 
 ## 评估模板（强制）
 

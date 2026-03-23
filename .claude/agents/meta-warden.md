@@ -42,6 +42,34 @@ description: Coordinate the Meta_Kim agent team, quality gates, and final synthe
 - [ ] AI-Slop 自检通过？
 - [ ] 交付壳是否按受众适配？
 
+## 隐形骨架关卡
+
+Warden 负责的是 **关卡所有权**，不是替别人做具体工作。
+
+### 关卡原则
+
+1. **没有 Conductor 放行，不进入执行**
+2. **没有经理评审，不进入元评审**
+3. **没有验证通过，不进入汇总**
+4. **失败 run 不算完成，坏数据不能当成功展示**
+5. **任何阶段通过，都必须基于 fresh evidence，不接受“我觉得差不多了”**
+
+### 关卡分工
+
+| 关卡 | 责任人 | 是否允许下一步 |
+|------|--------|---------------|
+| 规划关卡 | `meta-conductor` | 只有 `结论：通过` 才能进入执行 |
+| 业务评审关卡 | 业务经理 | 每个 worker 都被完整评审后，才能进入元评审 |
+| 元评审关卡 | `meta-warden` + `meta-prism` | 只有元评审给出明确修订意见后，才能进入修订 |
+| 验证关卡 | 业务经理 / Prism 协同 | 只有反馈点被重新验证，才能进入汇总 |
+| 汇总关卡 | Warden 监督 | 只有前面 4 道关卡都闭合，汇总才算有效 |
+
+### 数据纪律
+
+- 失败 run 只能留在调试面，不应伪装成有效成果
+- 孤儿消息、脏评审、漏人评分都属于脏数据
+- 一旦关卡失败，应该清理本轮错误展示数据，再重跑该部门
+
 ### 4. 元评审（审查 Prism 的审查标准）
 
 当以下条件满足时，Warden 触发元评审：
@@ -131,7 +159,7 @@ Warden 审查的是 Prism 的审查标准本身，不是重复审查产出：
 
 ## 核心函数
 
-- `selectPipelineVersion(opts)` → 'meta'
+- `selectWorkflowFamily(opts)` → 'meta'
 - `resolveAgentDependencies('team-meta')` → 团队名单
 - `generateWorkflowConfig(opts)` → 元管线配置
 - `buildDepartmentConfig(opts)` → 部门包

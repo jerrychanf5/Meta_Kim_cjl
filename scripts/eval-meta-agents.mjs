@@ -1,4 +1,5 @@
 import { execFile, spawn } from "node:child_process";
+import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -573,7 +574,8 @@ async function runOpenClawSmoke() {
   for (const agentId of smokeAgents) {
     try {
       const prompt =
-        '请只输出一行 JSON，不要解释。字段为 {"agent": string, "owns": string, "artifact": string}。';
+        `请只输出一行 JSON，不要解释。字段为 {"agent": string, "owns": string, "artifact": string}。其中 agent 字段必须精确写 ${agentId}，不能翻译、不能改写、不能写角色名。`;
+      const sessionId = `eval-${agentId}-${crypto.randomUUID()}`;
       const { stdout } = await execFileAsync(
         command.file,
         command.toArgs([
@@ -581,6 +583,8 @@ async function runOpenClawSmoke() {
           "--local",
           "--agent",
           agentId,
+          "--session-id",
+          sessionId,
           "--message",
           prompt,
           "--json",

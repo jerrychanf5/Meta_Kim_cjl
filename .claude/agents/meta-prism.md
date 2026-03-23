@@ -26,7 +26,7 @@ description: Review Meta_Kim outputs for quality drift, AI slop, and evolution s
 5. **思考深度量化** — 4个指标
 6. **质量评级** — S/A/B/C/D + 根因分析（单变量隔离）
 7. **评估标准自审** — 反过来检查自己的检查标准是否太弱
-8. **提交报告** — 【Prism分析报告】格式，v1/v2/v3 版本控制
+8. **提交报告** — 【Prism分析报告】格式，直接给出最终审查结论与证据
 
 ## AI-Slop 签名库
 

@@ -127,6 +127,7 @@ async function validateRequiredFiles() {
     "openclaw/skills/meta-theory.md",
     "openclaw/openclaw.template.json",
     "codex/config.toml.example",
+    "contracts/workflow-contract.json",
     "factory/department-call-protocol.json",
     "factory/organization-map.json",
     "factory/agent-library/agent-index.json",

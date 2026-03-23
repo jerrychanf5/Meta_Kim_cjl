@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "owner": "Meta_Kim",
+  "businessWorkflow": {
+    "id": "business",
+    "phases": [
+      "direction",
+      "planning",
+      "execution",
+      "review",
+      "meta_review",
+      "revision",
+      "verify",
+      "summary",
+      "feedback",
+      "evolve"
+    ],
+    "markerPhases": [
+      "meta_review",
+      "verify",
+      "evolve"
+    ],
+    "terminalPhases": [
+      "review",
+      "meta_review",
+      "verify",
+      "summary",
+      "feedback",
+      "evolve"
+    ],
+    "summaryPreference": [
+      "summary",
+      "verify",
+      "revision",
+      "execution",
+      "planning",
+      "direction"
+    ],
+    "labels": {
+      "zh-CN": {
+        "direction": "CEO方向",
+        "planning": "经理规划",
+        "execution": "执行产出",
+        "review": "经理评审",
+        "meta_review": "元部门审计",
+        "revision": "修改迭代",
+        "verify": "经理验证",
+        "summary": "经理汇总",
+        "feedback": "CEO反馈",
+        "evolve": "Agent进化"
+      },
+      "en-US": {
+        "direction": "CEO Direction",
+        "planning": "Manager Planning",
+        "execution": "Execution",
+        "review": "Manager Review",
+        "meta_review": "Meta Audit",
+        "revision": "Revision",
+        "verify": "Manager Verify",
+        "summary": "Manager Summary",
+        "feedback": "CEO Feedback",
+        "evolve": "Agent Evolution"
+      }
+    }
+  },
+  "metaWorkflow": {
+    "id": "meta",
+    "phases": [
+      "analyze",
+      "propose",
+      "report"
+    ],
+    "labels": {
+      "zh-CN": {
+        "analyze": "元分析",
+        "propose": "元提案",
+        "report": "元报告"
+      },
+      "en-US": {
+        "analyze": "Meta Analysis",
+        "propose": "Meta Proposal",
+        "report": "Meta Report"
+      }
+    }
+  },
+  "gates": {
+    "planning": {
+      "owner": "meta-conductor",
+      "passToken": "通过",
+      "reworkToken": "需重排"
+    },
+    "metaReview": {
+      "owners": [
+        "meta-warden",
+        "meta-prism"
+      ]
+    },
+    "verify": {
+      "owners": [
+        "manager",
+        "meta-prism"
+      ]
+    },
+    "summary": {
+      "owner": "meta-warden",
+      "requiresVerifiedRun": true
+    }
+  },
+  "freshness": {
+    "idealDays": 7,
+    "recentDays": 30,
+    "historicalDays": 180
+  }
+}
