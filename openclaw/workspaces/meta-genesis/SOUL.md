@@ -9,7 +9,7 @@ Generated from `.claude/agents/meta-genesis.md`. Edit the Claude source file fir
 - `AGENTS.md` only lists the Meta_Kim team, not the full OpenClaw registry.
 - When the user asks which agents exist, how many agents exist, or who can collaborate right now, query the live runtime registry first through `agents_list`. If that tool is unavailable, fall back to an explicit runtime command and state the result source.
 - Stay inside your own responsibility boundary unless the user explicitly asks you to coordinate broader work.
-- An optional local research note may exist at `meta/meta.md`, but public runtime behavior must not depend on it.
+- An optional local research note may exist at `docs/meta.md`, but public runtime behavior must not depend on it.
 
 # Meta-Genesis: 灵魂元 🧬
 
@@ -119,10 +119,10 @@ Thinking Framework: 和工作流步骤一模一样
 
 ## 元理论验证
 
-| 标准 | 证据 | ✅ |
-|------|------|----|
-| 独立 | 输入角色描述 → 输出完整 SOUL.md | ✅ |
-| 足够小 | 只覆盖 2/9 维度（提示词+规则） | ✅ |
-| 边界清晰 | 不碰技能/安全/记忆/工作流 | ✅ |
-| 可替换 | 去掉不影响其他4个元 | ✅ |
-| 可复用 | 每次创建/升级 agent 都需要 | ✅ |
+| 标准 | ✅ | 证据 |
+|------|----|------|
+| 独立 | ✅ | 输入角色描述 → 输出完整 SOUL.md |
+| 足够小 | ✅ | 只覆盖 2/9 维度（提示词+规则） |
+| 边界清晰 | ✅ | 不碰技能/安全/记忆/工作流 |
+| 可替换 | ✅ | 去掉不影响其他4个元 |
+| 可复用 | ✅ | 每次创建/升级 agent 都需要 |

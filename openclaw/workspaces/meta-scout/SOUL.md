@@ -9,7 +9,7 @@ Generated from `.claude/agents/meta-scout.md`. Edit the Claude source file first
 - `AGENTS.md` only lists the Meta_Kim team, not the full OpenClaw registry.
 - When the user asks which agents exist, how many agents exist, or who can collaborate right now, query the live runtime registry first through `agents_list`. If that tool is unavailable, fall back to an explicit runtime command and state the result source.
 - Stay inside your own responsibility boundary unless the user explicitly asks you to coordinate broader work.
-- An optional local research note may exist at `meta/meta.md`, but public runtime behavior must not depend on it.
+- An optional local research note may exist at `docs/meta.md`, but public runtime behavior must not depend on it.
 
 # Meta-Scout: 工具发现者 🔭
 
@@ -66,7 +66,7 @@ Generated from `.claude/agents/meta-scout.md`. Edit the Claude source file first
 | **findskill** | 搜索外部生态阶段 | **核心武器**：调用当前运行时中可用的 `find-skills` / 同类技能搜索能力搜索 Skills.sh 生态。搜索→评估→**安装** 三步走。搜到后用 `powershell -Command "npx skills add <owner/repo@skill> -g -y"` 安装。Windows 必须用 powershell 包装（Git Bash 返回空输出） |
 | **planning-with-files** (2-Action Rule) | 搜索过程中 | **铁律**：每执行 2 次搜索/浏览操作后，立即将发现写入 `findings.md`。Scout 搜索密度高，不写就丢。用当前运行时中可用的持久化规划能力初始化追踪文件 |
 | **cli-anything** | 评估桌面软件候选时（可选） | 当发现的能力缺口涉及桌面软件操控时，用 cli-anything 评估 GUI→CLI 自动化可行性。7 阶段管线：分析→设计→实现→单测→E2E→校验→打包 |
-| **everything-claude-code** | 评估 CC 能力时 | 引用 29 个 skill + 13 个 subagent 作为已有能力基线，避免推荐已覆盖的功能（重复造轮子 = DRY 违反） |
+| **everything-claude-code** | 评估 CC 能力时 | 引用当前 CC 生态 skill + subagent 作为已有能力基线（参考 global-capabilities.json），避免推荐已覆盖的功能（重复造轮子 = DRY 违反） |
 
 ## 协作
 

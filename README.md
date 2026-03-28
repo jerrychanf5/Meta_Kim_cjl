@@ -89,7 +89,20 @@ npm run sync:runtimes
 
 This synchronizes the 8 meta agents from `.claude/agents/` to all three runtime mirrors (Claude Code, Codex, OpenClaw). Run this **every time you modify an agent definition or SKILL.md**.
 
-### Step 3: Validate
+### Step 3: Discover Global Capabilities
+
+```bash
+npm run discover:global
+```
+
+Scans and indexes your globally-installed capabilities across all three runtimes (Claude Code, OpenClaw, Codex), generating a unified capability index. **Required on first setup; re-run after installing new global capabilities.**
+
+Scan scope:
+- **Claude Code** (`~/.claude/`): agents, skills, hooks, plugins, commands
+- **OpenClaw** (`~/.openclaw/`): agents, skills, hooks, commands
+- **Codex** (`~/.codex/`): agents, skills, commands
+
+### Step 4: Validate
 
 ```bash
 npm run validate
@@ -99,7 +112,7 @@ Checks that all agent frontmatter is valid, SKILL.md is synced across all layers
 
 **Expected output:** `Validation passed for 8 agents.`
 
-### Step 4: Run a Health Check
+### Step 5: Run a Health Check
 
 ```bash
 node scripts/agent-health-report.mjs
@@ -107,7 +120,7 @@ node scripts/agent-health-report.mjs
 
 Gives you a quick read on all 8 agents: version, frontmatter completeness, boundary definitions, workspace files, skill sync status, and a composite health score.
 
-### Step 5: Start Using (in Claude Code)
+### Step 6: Start Using (in Claude Code)
 
 Open the repo with Claude Code and say:
 
@@ -322,7 +335,6 @@ Meta_Kim/
 ├─ .agents/        Codex project-level skill mirror
 ├─ codex/          Codex global config example
 ├─ openclaw/       OpenClaw workspaces, template config, runtime mirrors
-├─ factory/        Published industry library and runtime import packs
 ├─ images/         Public assets used by the README
 ├─ scripts/        Sync, validation, MCP, evaluation, OpenClaw helper, and agent health reporting scripts
 ├─ shared-skills/  Shared skill mirrors across runtimes
@@ -335,7 +347,7 @@ Meta_Kim/
 
 Local-only ignored folders are not part of the public release surface:
 
-- `meta/`
+- `docs/`
 - `image/`
 - `node_modules/`
 
@@ -351,49 +363,6 @@ So:
 - `.codex/` is the repo content Codex reads directly
 - `codex/` is only the example directory for wiring `~/.codex/config.toml`
 
-## What Is Inside `factory/`
-
-`factory/` contains release assets and machine-readable indexes for the industry library.
-
-### Primary release directories
-
-- `factory/agent-library/`
-  - the full human-readable library
-  - `100` department agents
-  - `1000` specialist agents
-- `factory/flagship-complete/`
-  - `20` hand-polished flagship agents
-- `factory/runtime-packs/`
-  - Claude Code / Codex / OpenClaw import packs
-  - `1100` runtime-pack entries
-
-### Machine-readable indexes
-
-- `factory/organization-map.json`
-- `factory/department-call-protocol.json`
-- `factory/agent-library/agent-index.json`
-- `factory/flagship-complete/index.json`
-- `factory/flagship-complete/summary.json`
-- `factory/runtime-packs/summary.json`
-
-### Covered industries
-
-- Game
-- Internet
-- Finance
-- AI
-- Healthcare
-- Stocks
-- Investment
-- Web3
-- Media
-- Ecommerce
-- Education
-- Legal
-- Manufacturing
-- Logistics
-- Real Estate
-- Energy
 - Automotive
 - Travel & Hospitality
 - Biotech
@@ -416,6 +385,16 @@ Run this after cloning if you want to use or validate the repo locally.
 ### `npm run sync:runtimes`
 
 Run this after changing canonical agents, skills, or runtime-facing config. It rebuilds the runtime mirrors for Claude Code, Codex, and OpenClaw.
+
+### `npm run discover:global`
+
+Run this to scan and index your globally-installed capabilities across all three runtimes:
+
+- **Claude Code** (`~/.claude/`): agents, skills, hooks, plugins, commands
+- **OpenClaw** (`~/.openclaw/`): agents, skills, hooks, commands
+- **Codex** (`~/.codex/`): agents, skills, commands
+
+Generates `.claude/capability-index/global-capabilities.json` for use by the meta-theory skill's Fetch phase. This allows the meta architecture to see and integrate with your global capabilities.
 
 ### `npm run validate`
 

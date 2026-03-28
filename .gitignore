@@ -1,6 +1,7 @@
 node_modules/
 npm-debug.log*
-meta/
+docs/
 image/
 openclaw/openclaw.local.json
 openclaw/workspaces/*/.openclaw/
+.claude/capability-index/

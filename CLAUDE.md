@@ -18,7 +18,7 @@ The eight meta agents are not here for visual complexity. They exist to:
 
 ## Public and Private Layers
 
-The long-form local research manuscript under `meta/` is private research material and is intentionally not part of the public GitHub payload.
+The long-form local research manuscript under `docs/` is private research material and is intentionally not part of the public GitHub payload.
 
 Claude Code should align with the project goal, but should not depend on that private manuscript.
 
@@ -66,12 +66,39 @@ So in practice:
 - After changing prompts, skills, or runtime contracts, run:
   - `npm run sync:runtimes`
   - `npm run validate`
+- To integrate your global capabilities (agents, skills, hooks, plugins, commands):
+  - `npm run discover:global`
 - If you need runtime-level acceptance instead of file-level validation, also run:
   - `npm run eval:agents`
 - For full validation + acceptance, run:
   - `npm run verify:all`
 - For a quick health check of all 8 meta agents:
   - `node scripts/agent-health-report.mjs`
+
+## Global Capability Discovery
+
+Meta_Kim can now discover and integrate with your globally-installed capabilities across all three runtimes:
+
+```bash
+npm run discover:global
+```
+
+This generates `.claude/capability-index/global-capabilities.json` which includes:
+
+**Claude Code** (`~/.claude/`):
+- 85+ global agents (ai-engineer, backend-architect, code-reviewer, etc.)
+- 30+ global skills (agent-browser, planning-with-files, claudeception, etc.)
+- 37+ hooks (session-start, user-prompt-submit, post-tool-use, etc.)
+- 9+ plugins (LSP servers, tool extensions)
+- 33+ commands (commit, debug, test-driven-development, etc.)
+
+**OpenClaw** (`~/.openclaw/`):
+- Skills and workspace configurations
+
+**Codex** (`~/.codex/`):
+- Skills and custom agents
+
+The meta-theory skill's Fetch phase automatically checks this index, allowing the meta architecture to route requests to your global capabilities when appropriate.
 
 ## One-Line Summary
 

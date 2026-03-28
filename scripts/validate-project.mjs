@@ -508,7 +508,7 @@ async function validateGitignore() {
   const gitignore = await fs.readFile(gitignorePath, "utf8");
   for (const expected of [
     "node_modules/",
-    "meta/",
+    "docs/",
     "openclaw/openclaw.local.json",
     "openclaw/workspaces/*/.openclaw/"
   ]) {
@@ -799,7 +799,7 @@ async function main() {
   pass("All required scripts registered");
 
   // 8. .gitignore
-  step(current++, TOTAL, "Checking .gitignore rules", "node_modules/ / meta/ / openclaw local config, etc.");
+  step(current++, TOTAL, "Checking .gitignore rules", "node_modules/ / docs/ / openclaw local config, etc.");
   await validateGitignore();
   pass(".gitignore contains all necessary rules");
 

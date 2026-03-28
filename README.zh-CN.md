@@ -89,7 +89,20 @@ npm run sync:runtimes
 
 这步把 `.claude/agents/` 里的 8 个 agent 同步到 Claude Code / Codex / OpenClaw 三端镜像。**每次改了 agent 定义或 SKILL.md 后都要跑。**
 
-### 第三步：验证完整性
+### 第三步：发现全局能力
+
+```bash
+npm run discover:global
+```
+
+扫描并索引你全局安装的能力（Claude Code、OpenClaw、Codex 三端），生成统一的能力索引。**安装后首次必须运行，之后安装新全局能力时需重新运行。**
+
+扫描范围：
+- **Claude Code** (`~/.claude/`): agents、skills、hooks、plugins、commands
+- **OpenClaw** (`~/.openclaw/`): agents、skills、hooks、commands
+- **Codex** (`~/.codex/`): agents、skills、commands
+
+### 第四步：验证完整性
 
 ```bash
 npm run validate
@@ -99,7 +112,7 @@ npm run validate
 
 **期望输出：** `Validation passed for 8 agents.`
 
-### 第四步：快速健康度检查
+### 第五步：快速健康度检查
 
 ```bash
 node scripts/agent-health-report.mjs
@@ -343,7 +356,7 @@ Meta_Kim/
 
 本地私有目录不属于公开发布面：
 
-- `meta/`：作者本地研究稿与文章目录，已忽略
+- `docs/`：作者本地研究稿与文章目录，已忽略
 - `image/`：本地截图和临时导出目录，已忽略
 - `node_modules/`：本地依赖目录，已忽略
 
@@ -432,6 +445,16 @@ Codex 的配置分两层：
 
 你改了主源 agent、skill、运行时配置之后执行。
 作用是把主源重新同步成 Claude Code / Codex / OpenClaw 三端镜像。
+
+### `npm run discover:global`（新增）
+
+扫描并索引你全局安装的能力（跨三个运行时）：
+
+- **Claude Code** (`~/.claude/`): agents、skills、hooks、plugins、commands
+- **OpenClaw** (`~/.openclaw/`): agents、skills、hooks、commands
+- **Codex** (`~/.codex/`): agents、skills、commands
+
+生成 `.claude/capability-index/global-capabilities.json`，供 meta-theory skill 的 Fetch 阶段使用。这样元架构就能看到并整合你的全局能力。
 
 ### `npm run validate`
 
