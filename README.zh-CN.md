@@ -1116,12 +1116,16 @@ node scripts/agent-health-report.mjs
 | `npm install` | 手动安装时 | 安装 Node 依赖 |
 | `npm run sync:runtimes` | 改完主源后 | 重建三端镜像 |
 | `npm run check:runtimes` | 不想写文件时 | 只检查镜像是否最新 |
-| `npm run show:global:meta-theory-targets` | 想确认会写到哪些用户级目录 | 打印 Claude / OpenClaw / Codex 的全局 meta-theory 同步目标 |
-| `npm run sync:global:meta-theory` | 改了 canonical `meta-theory` 后 | 同步用户级 Claude/OpenClaw 技能，并把 Codex 默认放到 standby 目录 |
-| `npm run check:global:meta-theory` | 不想改用户级文件时 | 只检查全局 meta-theory 是否和 canonical 同步 |
+| `npm run show:global:meta-theory-targets` | 想确认会写到哪些用户级目录 | 打印 Claude / OpenClaw / Codex 的全局 meta-theory 目标及 Claude hooks 路径 |
+| `npm run sync:global:meta-theory` | 改了 canonical `meta-theory` 或 `.claude/hooks` 后 | 同步用户级 Claude/OpenClaw 技能；把 hooks 复制到 `~/.claude/hooks/meta-kim/` 并把 hook 条目合并进 `~/.claude/settings.json`；Codex 默认 standby |
+| `npm run sync:global:meta-theory -- --skip-global-hooks` | 不能动用户级 settings/hooks 时 | 同上但不写 Claude 全局 hooks |
+| `npm run check:global:meta-theory` | 不想改用户级文件时 | 检查全局 meta-theory 与 Claude `hooks/meta-kim` 是否与 canonical 一致 |
 | `npm run sync:global:meta-theory:codex-active` | 希望 Codex 全局技能直接启用时 | 把 Codex 的全局 meta-theory 写到活动目录而不是 `.disabled/` |
 | `npm run deps:install` | 第一次配置 Claude 生态 | 安装 9 个全局元技能 |
 | `npm run deps:update` | 依赖需要更新时 | 更新已安装的元技能 |
+| `npm run deps:install:all-runtimes` | 用 Windows 或也要给 Codex/OpenClaw 装同套 skills | 把同一批 skill 仓库 clone 到 `~/.claude/skills`、`~/.codex/skills`、`~/.openclaw/skills`；若 PATH 上有 `claude`，会执行 `claude plugin install superpowers@claude-plugins-official` |
+| `npm run deps:update:all-runtimes` | 三端 skills 都要更新 | 同上并带 `--update` |
+| `npm run deps:install:claude-plugins` | 只装 Claude Code 官方 plugin 包 | 只跑 `claude plugin install …`，不做 git clone |
 | `npm run discover:global` | 首次安装后、装了新全局能力后 | 生成全局能力索引 |
 | `npm run probe:clis` | 怀疑 CLI 没配好时 | 探测 Claude / Codex / OpenClaw CLI |
 | `npm run test:mcp` | 改了 MCP 相关逻辑时 | 自测 `meta-runtime-server` |

@@ -1111,12 +1111,16 @@ The system routes each request through the matching governance stage.
 | `npm install`                          | manual setup                                     | installs Node dependencies                                            |
 | `npm run sync:runtimes`                | after editing canonical source                   | rebuilds runtime mirrors                                              |
 | `npm run check:runtimes`               | when you only want a diff check                  | verifies mirrors are current without rewriting                        |
-| `npm run show:global:meta-theory-targets` | before touching user-level runtime homes       | prints the resolved global `meta-theory` sync targets                 |
-| `npm run sync:global:meta-theory`      | after changing canonical `meta-theory`           | syncs the global Claude/OpenClaw skill and parks Codex in standby     |
-| `npm run check:global:meta-theory`     | when you want a read-only drift check            | verifies the global `meta-theory` mirrors without rewriting           |
+| `npm run show:global:meta-theory-targets` | before touching user-level runtime homes       | prints the resolved global `meta-theory` sync targets and Claude hook paths |
+| `npm run sync:global:meta-theory`      | after changing canonical `meta-theory` or `.claude/hooks` | syncs global Claude/OpenClaw `meta-theory`, copies hooks to `~/.claude/hooks/meta-kim/`, merges hook entries into `~/.claude/settings.json`, parks Codex in standby |
+| `npm run sync:global:meta-theory -- --skip-global-hooks` | when you must not touch user `settings.json`/hooks | same as above but skips Claude global hooks merge |
+| `npm run check:global:meta-theory`     | when you want a read-only drift check            | verifies global `meta-theory` mirrors and Claude `hooks/meta-kim` copy without rewriting |
 | `npm run sync:global:meta-theory:codex-active` | when you want Codex global `meta-theory` active | writes the Codex global skill into the active path instead of `.disabled/` |
 | `npm run deps:install`                 | first Claude ecosystem setup                     | installs 9 global meta-skills                                         |
 | `npm run deps:update`                  | when skill dependencies need updating            | updates installed meta-skills                                         |
+| `npm run deps:install:all-runtimes`    | Windows or when you use Codex/OpenClaw globally too | clones the same 9 skill repos into `~/.claude/skills`, `~/.codex/skills`, `~/.openclaw/skills`; runs `claude plugin install superpowers@claude-plugins-official` if `claude` is on PATH |
+| `npm run deps:update:all-runtimes`     | refresh all three skill trees                    | same as above with `--update`                                         |
+| `npm run deps:install:claude-plugins`  | only official CC plugin bundles                | runs `claude plugin install …` only (no git clones)                  |
 | `npm run discover:global`              | first setup and after adding global capabilities | rebuilds the global capability index                                  |
 | `npm run probe:clis`                   | when CLI availability is unclear                 | probes Claude / Codex / OpenClaw CLIs                                 |
 | `npm run test:mcp`                     | after changing MCP-related code                  | self-tests `meta-runtime-server`                                    |

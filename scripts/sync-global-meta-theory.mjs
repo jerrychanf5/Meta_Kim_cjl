@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+/**
+ * Global sync: canonical meta-theory skill + Meta_Kim `.claude/hooks` into runtime homes.
+ * Flags: --check, --activate-codex, --print-targets, --skip-global-hooks (skip Claude hooks copy + settings merge).
+ */
 
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
@@ -15,6 +19,9 @@ const sourceSkillFile = path.join(sourceDir, "SKILL.md");
 const checkOnly = process.argv.includes("--check");
 const activateCodex = process.argv.includes("--activate-codex");
 const printTargetsOnly = process.argv.includes("--print-targets");
+const skipGlobalHooks = process.argv.includes("--skip-global-hooks");
+
+const repoHooksDir = path.join(repoRoot, ".claude", "hooks");
 
 const runtimeSpecs = {
   claude: {
@@ -230,6 +237,172 @@ async function removeIfExists(targetPath) {
   return true;
 }
 
+function globalMetaKimHooksDir() {
+  return path.join(runtimeHomes.claude.dir, "hooks", "meta-kim");
+}
+
+function isMetaKimManagedHookCommand(command) {
+  if (typeof command !== "string") {
+    return false;
+  }
+  return (
+    command.includes("hooks/meta-kim/") ||
+    command.includes("hooks\\meta-kim\\")
+  );
+}
+
+function hookCommandNode(absScriptPath) {
+  return `node ${JSON.stringify(absScriptPath)}`;
+}
+
+/** Hook blocks matching Meta_Kim canonical .claude/settings.json (absolute script paths). */
+function buildMetaKimHooksTemplate(absHooksDir) {
+  const cmd = (name) => ({
+    type: "command",
+    command: hookCommandNode(path.join(absHooksDir, name)),
+  });
+
+  return {
+    PreToolUse: [
+      {
+        matcher: "Bash",
+        hooks: [cmd("block-dangerous-bash.mjs"), cmd("pre-git-push-confirm.mjs")],
+      },
+    ],
+    PostToolUse: [
+      {
+        matcher: "Edit|Write",
+        hooks: [
+          cmd("post-format.mjs"),
+          cmd("post-typecheck.mjs"),
+          cmd("post-console-log-warn.mjs"),
+        ],
+      },
+    ],
+    SubagentStart: [
+      {
+        matcher: "*",
+        hooks: [cmd("subagent-context.mjs")],
+      },
+    ],
+    Stop: [
+      {
+        matcher: "*",
+        hooks: [
+          cmd("stop-console-log-audit.mjs"),
+          cmd("stop-completion-guard.mjs"),
+        ],
+      },
+    ],
+  };
+}
+
+function stripMetaKimHookEntriesFromBlocks(blocks) {
+  return blocks
+    .map((block) => ({
+      ...block,
+      hooks: (block.hooks || []).filter(
+        (h) => !isMetaKimManagedHookCommand(h.command || "")
+      ),
+    }))
+    .filter((block) => (block.hooks || []).length > 0);
+}
+
+function mergeHookMatcherBlocks(existing, additions) {
+  const result = structuredClone(existing);
+  for (const addBlock of additions) {
+    const idx = result.findIndex((b) => b.matcher === addBlock.matcher);
+    if (idx === -1) {
+      result.push(structuredClone(addBlock));
+      continue;
+    }
+    const cmds = new Set(
+      (result[idx].hooks || []).map((h) => h.command).filter(Boolean)
+    );
+    for (const h of addBlock.hooks || []) {
+      if (!cmds.has(h.command)) {
+        if (!result[idx].hooks) {
+          result[idx].hooks = [];
+        }
+        result[idx].hooks.push(h);
+        cmds.add(h.command);
+      }
+    }
+  }
+  return result;
+}
+
+function mergeMetaKimHooksIntoSettings(settings, template) {
+  const next = { ...settings };
+  if (!next.hooks) {
+    next.hooks = {};
+  }
+  const hooks = { ...next.hooks };
+
+  for (const [event, additionBlocks] of Object.entries(template)) {
+    const cleaned = stripMetaKimHookEntriesFromBlocks(hooks[event] || []);
+    hooks[event] = mergeHookMatcherBlocks(cleaned, additionBlocks);
+  }
+
+  next.hooks = hooks;
+  return next;
+}
+
+async function copyCanonicalHooksToGlobal() {
+  const dest = globalMetaKimHooksDir();
+  assertHomeBound(dest);
+  if (!(await pathExists(repoHooksDir))) {
+    throw new Error(`Missing canonical hooks source: ${repoHooksDir}`);
+  }
+  await fs.mkdir(path.dirname(dest), { recursive: true });
+  await fs.rm(dest, { recursive: true, force: true });
+  await fs.cp(repoHooksDir, dest, { recursive: true, force: true });
+}
+
+async function syncClaudeGlobalSettingsHooks() {
+  const absHooks = globalMetaKimHooksDir();
+  const settingsPath = path.join(runtimeHomes.claude.dir, "settings.json");
+  assertHomeBound(settingsPath);
+
+  const template = buildMetaKimHooksTemplate(absHooks);
+  let base = {};
+  if (await pathExists(settingsPath)) {
+    const raw = await fs.readFile(settingsPath, "utf8");
+    try {
+      base = JSON.parse(raw);
+    } catch {
+      throw new Error(`Invalid JSON in ${settingsPath}; fix or move aside before sync.`);
+    }
+  }
+
+  if (base.disableAllHooks === true) {
+    console.warn(
+      "Warning: ~/.claude/settings.json has disableAllHooks=true — Meta_Kim hook entries were merged but will not run until disabled."
+    );
+  }
+
+  const merged = mergeMetaKimHooksIntoSettings(base, template);
+  const out = `${JSON.stringify(merged, null, 2)}\n`;
+  const prev = (await pathExists(settingsPath))
+    ? await fs.readFile(settingsPath, "utf8")
+    : null;
+
+  if (prev === out) {
+    console.log(`Claude Code settings hooks already up to date: ${settingsPath}`);
+    return;
+  }
+
+  if (prev !== null) {
+    const bak = `${settingsPath}.meta-kim.bak`;
+    assertHomeBound(bak);
+    await fs.copyFile(settingsPath, bak);
+    console.log(`Backed up previous settings to ${bak}`);
+  }
+
+  await fs.writeFile(settingsPath, out, "utf8");
+  console.log(`Merged Meta_Kim hooks into ${settingsPath}`);
+}
+
 async function runCheck() {
   const sourceFingerprint = await fingerprintDir(sourceDir);
   let failed = false;
@@ -255,6 +428,23 @@ async function runCheck() {
     }
   }
 
+  if (!skipGlobalHooks) {
+    const repoHooksFp = await fingerprintDir(repoHooksDir);
+    const globalHooksPath = globalMetaKimHooksDir();
+    const globalHooksFp = await fingerprintDir(globalHooksPath);
+    const hooksInSync =
+      repoHooksFp !== null &&
+      globalHooksFp !== null &&
+      repoHooksFp.hash === globalHooksFp.hash &&
+      repoHooksFp.fileCount === globalHooksFp.fileCount;
+    console.log(
+      `${hooksInSync ? "OK" : "MISSING"} Claude Code global hooks (meta-kim): ${globalHooksPath}`
+    );
+    if (!hooksInSync) {
+      failed = true;
+    }
+  }
+
   process.exitCode = failed ? 1 : 0;
 }
 
@@ -274,6 +464,14 @@ async function runSync() {
     await copyCanonicalSkill(target.dir);
     console.log(`Synced ${target.label}: ${target.dir}`);
   }
+
+  if (!skipGlobalHooks) {
+    await copyCanonicalHooksToGlobal();
+    console.log(`Synced Claude Code global hooks: ${globalMetaKimHooksDir()}`);
+    await syncClaudeGlobalSettingsHooks();
+  } else {
+    console.log("Skipped Claude Code global hooks (--skip-global-hooks).");
+  }
 }
 
 function printTargets() {
@@ -291,6 +489,10 @@ function printTargets() {
   console.log("- META_KIM_CLAUDE_HOME or CLAUDE_HOME");
   console.log("- META_KIM_OPENCLAW_HOME or OPENCLAW_HOME");
   console.log("- META_KIM_CODEX_HOME or CODEX_HOME");
+  console.log("");
+  console.log("Claude Code hooks (unless --skip-global-hooks):");
+  console.log(`- Scripts: ${globalMetaKimHooksDir()}`);
+  console.log(`- Merged into: ${path.join(runtimeHomes.claude.dir, "settings.json")}`);
 }
 
 async function main() {

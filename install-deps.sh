@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Meta_Kim 元技能依赖安装脚本
 # 将 9 个放大 agent 能力的元技能安装到全局 ~/.claude/skills/
+#
+# 跨平台 / 三端 skills + 可选 Claude Code 官方 plugin：
+#   npm run deps:install:all-runtimes
+# （Codex ~/.codex/skills、OpenClaw ~/.openclaw/skills、并尝试 claude plugin install）
 
 set -e
 
