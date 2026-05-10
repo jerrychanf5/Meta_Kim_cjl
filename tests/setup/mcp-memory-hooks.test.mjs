@@ -61,6 +61,13 @@ describe("MCP memory cross-runtime hooks", () => {
     assert.match(source, /settings\.hooks\.stop/);
   });
 
+  test("installer uses PATH-resolved node for shell-portable hook commands", () => {
+    const source = readRepoFile("scripts", "install-mcp-memory-hooks.mjs");
+
+    assert.match(source, /return \["node", hookPath, \.\.\.args\]/);
+    assert.doesNotMatch(source, /\[process\.execPath, hookPath/);
+  });
+
   test("OpenClaw managed hook is packaged", () => {
     const hookMd = readRepoFile(
       "canonical",
