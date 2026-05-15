@@ -4,6 +4,7 @@
 <p style="font-size: 1.2em; color: #7c3aed; font-weight: 600; margin-top: 0;">META_KIM</p>
 
 <p>
+  Language:
   <a href="README.md">English</a> |
   <a href="README.zh-CN.md">简体中文</a> |
   <a href="README.ja-JP.md">日本語</a> |
@@ -85,7 +86,7 @@ After global install (`node setup.mjs` or `npx`), what works where:
 GitHub <a href="https://github.com/KimYx0207">KimYx0207</a> |
 X <a href="https://x.com/KimYx0207">@KimYx0207</a> |
 Website <a href="https://www.aiking.dev/">aiking.dev</a> |
-WeChat Official Account: <strong>老金带你玩AI</strong>
+WeChat Official Account: <strong>Lao Jin Guides You Through AI</strong>
 
 Feishu knowledge base:
 <a href="https://my.feishu.cn/wiki/OhQ8wqntFihcI1kWVDlcNdpznFf">long-term updates</a>

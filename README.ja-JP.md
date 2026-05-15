@@ -4,6 +4,7 @@
 <p style="font-size: 1.2em; color: #7c3aed; font-weight: 600; margin-top: 0;">META_KIM</p>
 
 <p>
+  言語：
   <a href="README.md">English</a> |
   <a href="README.zh-CN.md">简体中文</a> |
   <a href="README.ja-JP.md">日本語</a> |
@@ -73,7 +74,7 @@ npm run meta:validate
 GitHub <a href="https://github.com/KimYx0207">KimYx0207</a> |
 X <a href="https://x.com/KimYx0207">@KimYx0207</a> |
 公式サイト <a href="https://www.aiking.dev/">aiking.dev</a> |
-WeChat 公式アカウント：**老金带你玩AI**
+WeChat 公式アカウント：**ラオジンとAIを楽しむ**
 
 Feishu ナレッジベース：
 <a href="https://my.feishu.cn/wiki/OhQ8wqntFihcI1kWVDlcNdpznFf">継続更新の入口</a>
