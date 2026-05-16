@@ -104,6 +104,8 @@ The other seven meta agents are backstage specialists, not the public menu.
 
 When `/meta-theory` is activated, the Codex main thread is the dispatcher ONLY. All execution (analysis, code, review, design) belongs to dispatched `spawn_agent` calls.
 
+For Codex, the activation itself is the user's explicit subagent request: `/meta-theory`, `meta-theory`, `meta theory`, `元理论`, or a `[$meta-theory](...)` skill mention means the user is explicitly asking for subagents / delegation / parallel agent work. Do not ask the user to separately say "use subagents" before dispatching.
+
 **Hard rules:**
 
 1. The main thread does scope, delegation, review, and synthesis ONLY. Never execute substantive analysis or code in the main thread.

@@ -31,7 +31,7 @@ Before doing ANY substantive work after this skill is activated:
 
 When running inside Codex, this skill is an execution protocol, not just a discussion style:
 
-- `Agent(...)` maps to Codex `spawn_agent`; treat `/meta-theory` as first-tier authorization for read-only capability discovery and parallel agent work
+- `Agent(...)` maps to Codex `spawn_agent`. A user invocation of `/meta-theory`, `meta-theory`, `meta theory`, `元理论`, or a `[$meta-theory](...)` skill mention is itself an explicit user request for subagents/delegation/parallel agent work; do not require the user to additionally say "use subagents" or "allow spawn_agent".
 - Apply `agent-teams-playbook` from the first available skill root before substantive work; convert its blueprint into capability-matched `spawn_agent` calls
 - Output a **Preflight block** before analysis: loaded skills, Type, scenario/mode, read/write scope, authorization tier, capability lookup path, planned agents or blocked reason
 - Keep main Codex thread limited to clarification, routing, verification, and synthesis
