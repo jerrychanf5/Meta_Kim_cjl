@@ -10,6 +10,9 @@ When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the
 
 ### Added
 
+- **Runtime hook mapping contract** — Added `scripts/runtime-hook-mapping.mjs` to centralize Claude/Codex/OpenClaw/Cursor hook capability mapping, command quoting, and HookPrompt adapter generation.
+- **HookPrompt Codex/Cursor adapter paths** — HookPrompt now declares runtime-neutral prompt optimization capability and installs to Codex through a `UserPromptSubmit` adapter and Cursor through a `beforeSubmitPrompt` adapter instead of pretending the Claude hook file is directly portable.
+- **Hook mapping validation** — `meta:validate` now checks Codex and Cursor hook output paths, HookPrompt platform support, and cross-platform hook command quoting.
 - **Shared hooks source files** — New `canonical/runtime-assets/shared/hooks/` directory with portable source files:
   - `activate-meta-theory-spine.mjs`: spine auto-trigger implementation
   - `spine-state.mjs`: spine state management utilities
@@ -20,6 +23,8 @@ When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the
 
 ### Changed
 
+- **Cursor hook stance** — Cursor is mapped as a native lowerCamel hook runtime through `.cursor/hooks.json` and `.cursor/hooks/`, including memory, graphify, and HookPrompt adapter hooks.
+- **Codex hook stance** — Codex is documented as a trusted project/user hook runtime with `.codex/hooks.json`, including graphify, memory, meta-theory spine, and HookPrompt adapter hooks.
 - **settings.json Skill hook** — PreToolUse matcher now routes to shared `activate-meta-theory-spine.mjs` for automatic spine state initialization.
 - **Capability index update** — Added spine-related capabilities to `config/capability-index/meta-kim-capabilities.json`.
 

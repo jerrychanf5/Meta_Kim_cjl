@@ -10,6 +10,9 @@
 
 ### 新增
 
+- **运行时 hook 映射契约** — 新增 `scripts/runtime-hook-mapping.mjs`，集中管理 Claude/Codex/OpenClaw/Cursor 的 hook 能力映射、命令 quoting 与 HookPrompt adapter 生成。
+- **HookPrompt Codex/Cursor adapter 路径** — HookPrompt 现在声明运行时无关的 prompt 优化能力，并通过 Codex `UserPromptSubmit` adapter、Cursor `beforeSubmitPrompt` adapter 安装，而不是把 Claude hook 文件假装成直接可移植。
+- **Hook 映射校验** — `meta:validate` 现在会检查 Codex 和 Cursor hook 输出路径、HookPrompt 平台支持和跨平台 hook 命令 quoting。
 - **共享 hooks 源文件** — 新增 `canonical/runtime-assets/shared/hooks/` 目录，包含可移植源文件：
   - `activate-meta-theory-spine.mjs`: spine 自动触发实现
   - `spine-state.mjs`: spine 状态管理工具
@@ -20,6 +23,8 @@
 
 ### 变更
 
+- **Cursor hook 口径** — Cursor 作为 lowerCamel 原生 hook runtime 映射，使用 `.cursor/hooks.json` 和 `.cursor/hooks/` 承载 memory、graphify 与 HookPrompt adapter hooks。
+- **Codex hook 口径** — Codex 现在明确为受信任的项目/用户 hook runtime，使用 `.codex/hooks.json` 承载 graphify、memory、meta-theory spine 与 HookPrompt adapter hooks。
 - **settings.json Skill hook** — PreToolUse matcher 现在指向共享的 `activate-meta-theory-spine.mjs`，实现 meta-theory skill 激活时自动初始化 spine state。
 - **能力索引更新** — 在 `config/capability-index/meta-kim-capabilities.json` 添加 spine 相关能力。
 
