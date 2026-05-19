@@ -802,7 +802,10 @@ async function validateWorkflowContract() {
     "taskClassification",
     "fetchPacket",
     "cardPlanPacket",
+    "dispatchEnvelopePacket",
     "orchestrationTaskBoardPacket",
+    "businessFlowBlueprintPacket",
+    "agentBlueprintPacket",
     "dispatchBoard",
     "workerTaskPacket",
     "workerResultPacket",
@@ -962,6 +965,9 @@ async function validateWorkflowContract() {
       "dispatchEnvelopePacket",
       [
         "ownerAgent",
+        "businessRoleId",
+        "roleDisplayName",
+        "roleInstanceId",
         "taskRef",
         "allowedCapabilities",
         "blockedCapabilities",
@@ -980,7 +986,39 @@ async function validateWorkflowContract() {
     ],
     [
       "orchestrationTask",
-      ["taskId", "taskKind", "owner", "sequence", "dependsOn", "deliverable"],
+      [
+        "taskId",
+        "taskKind",
+        "owner",
+        "businessRoleId",
+        "roleDisplayName",
+        "sequence",
+        "dependsOn",
+        "deliverable",
+      ],
+    ],
+    [
+      "businessFlowBlueprintPacket",
+      [
+        "deliverableType",
+        "requiredLanes",
+        "optionalLanes",
+        "omittedLanes",
+        "laneDependencies",
+        "coverageJudgment",
+        "blueprintSource",
+        "blueprintVersion",
+      ],
+    ],
+    [
+      "agentBlueprintPacket",
+      [
+        "roles",
+        "roleCoverageGate",
+        "missingRoles",
+        "duplicateRolePolicy",
+        "namingPolicy",
+      ],
     ],
     [
       "capabilityGapPacket",
@@ -998,12 +1036,44 @@ async function validateWorkflowContract() {
       "executionAgentCard",
       [
         "agentId",
+        "businessRoleId",
+        "roleDisplayName",
         "purpose",
         "capabilities",
         "nonCapabilities",
         "dependencies",
         "inputs",
         "outputs",
+      ],
+    ],
+    [
+      "workerTaskPacket",
+      [
+        "taskPacketId",
+        "owner",
+        "ownerMode",
+        "ownerAgent",
+        "businessRoleId",
+        "roleDisplayName",
+        "roleInstanceId",
+        "runtimeInstanceAlias",
+        "todayTask",
+        "output",
+        "deliverableLink",
+        "qualityBar",
+        "referenceDirection",
+        "handoffTarget",
+        "lengthExpectation",
+        "visualOrAssetPlan",
+        "dependsOn",
+        "parallelGroup",
+        "mergeOwner",
+        "shardKey",
+        "shardScope",
+        "workspaceIsolation",
+        "artifactNamespace",
+        "collisionPolicy",
+        "verifySteps",
       ],
     ],
     [
@@ -1116,6 +1186,121 @@ async function validateWorkflowContract() {
         `workflow-contract.json protocol ${protocolName} must require ${field}.`,
       );
     }
+  }
+
+  const businessFlowProtocol =
+    contract.protocols?.businessFlowBlueprintPacket ?? {};
+  for (const field of [
+    "laneId",
+    "businessLane",
+    "capabilityNeed",
+    "capabilitySearchQuery",
+    "candidateOwners",
+    "candidateSkills",
+    "selectedOwner",
+    "selectionReason",
+    "coverageStatus",
+  ]) {
+    assert(
+      businessFlowProtocol.laneRequiredFields?.includes(field),
+      `workflow-contract.json businessFlowBlueprintPacket.laneRequiredFields must include ${field}.`,
+    );
+  }
+  for (const status of [
+    "covered",
+    "partial",
+    "missing",
+    "omitted_with_reason",
+  ]) {
+    assert(
+      businessFlowProtocol.laneCoverageStatusEnum?.includes(status),
+      `workflow-contract.json businessFlowBlueprintPacket.laneCoverageStatusEnum must include ${status}.`,
+    );
+  }
+
+  const agentBlueprintProtocol = contract.protocols?.agentBlueprintPacket ?? {};
+  for (const field of [
+    "businessRoleId",
+    "roleDisplayName",
+    "assignedResponsibilitySlice",
+    "ownerAgent",
+    "ownerResponsibilityDelta",
+    "agentIterationPlan",
+    "ownerResolution",
+  ]) {
+    assert(
+      agentBlueprintProtocol.roleRequiredFields?.includes(field),
+      `workflow-contract.json agentBlueprintPacket.roleRequiredFields must include ${field}.`,
+    );
+  }
+  assert(
+    agentBlueprintProtocol.namingPolicy?.businessSemanticNamesOnly === true &&
+      agentBlueprintProtocol.namingPolicy?.runtimeNicknamesAreAliasesOnly ===
+        true &&
+      agentBlueprintProtocol.namingPolicy?.roleDisplayNameRequired === true,
+    "workflow-contract.json agentBlueprintPacket.namingPolicy must be the contract object with business-readable name rules.",
+  );
+  for (const resolution of [
+    "reuse_existing_owner",
+    "upgrade_existing_owner",
+    "create_owner_first",
+  ]) {
+    assert(
+      agentBlueprintProtocol.ownerResolutionEnum?.includes(resolution),
+      `workflow-contract.json agentBlueprintPacket.ownerResolutionEnum must include ${resolution}.`,
+    );
+  }
+  const roleCoverageRule =
+    contract.runDiscipline?.protocolFirst
+      ?.capabilityGapPacketRequiredWhenRoleCoverage ?? {};
+  assert(
+    roleCoverageRule.roleCoverageGate === "fail" &&
+      roleCoverageRule.missingRolesNonEmpty === true &&
+      roleCoverageRule.ownerResolutionAnyOf?.includes("upgrade_existing_owner") &&
+      roleCoverageRule.ownerResolutionAnyOf?.includes("create_owner_first"),
+    "workflow-contract.json must require capabilityGapPacket for failed role coverage, missing roles, and owner creation or upgrade.",
+  );
+  for (const resolution of ["upgrade_existing_owner", "create_owner_first"]) {
+    assert(
+      contract.runDiscipline?.protocolFirst?.executionAgentCardRequiredWhenOwnerResolutionAnyOf?.includes(
+        resolution,
+      ),
+      `workflow-contract.json executionAgentCardRequiredWhenOwnerResolutionAnyOf must include ${resolution}.`,
+    );
+  }
+
+  const sameOwnerPolicy =
+    contract.protocols?.workerTaskPacket?.sameOwnerMultiInstancePolicy ?? {};
+  assert(
+    sameOwnerPolicy.allowed === true &&
+      sameOwnerPolicy.roleInstanceIdUniqueWithinRun === true &&
+      sameOwnerPolicy.sameOwnerParallelGroupRequiresUnifiedMergeOwner === true,
+    "workflow-contract.json workerTaskPacket.sameOwnerMultiInstancePolicy must allow only sharded same-owner instances with unified mergeOwner.",
+  );
+  for (const field of [
+    "roleInstanceId",
+    "shardKey",
+    "shardScope",
+    "workspaceIsolation",
+    "artifactNamespace",
+    "collisionPolicy",
+    "mergeOwner",
+  ]) {
+    assert(
+      sameOwnerPolicy.requiredFields?.includes(field),
+      `workflow-contract.json workerTaskPacket.sameOwnerMultiInstancePolicy.requiredFields must include ${field}.`,
+    );
+  }
+  for (const policy of [
+    "no_overlap",
+    "merge_by_owner",
+    "lock_required",
+    "sequentialize",
+  ]) {
+    assert(
+      sameOwnerPolicy.collisionPolicyEnum?.includes(policy),
+      `workflow-contract.json workerTaskPacket.sameOwnerMultiInstancePolicy.collisionPolicyEnum must include ${policy}.`,
+    );
   }
 
   const verificationPacketFields =

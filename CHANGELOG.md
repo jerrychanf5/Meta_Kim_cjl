@@ -6,6 +6,26 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.0.36] - 2026-05-20
+
+### Added
+
+- **Business-flow blueprint gate** — Requires executable runs to plan product, UX, UI, frontend, backend, database, motion, QA, testing, release, feedback, and evolution lanes where relevant before dispatch.
+- **Business-readable agent roles** — Separates user-visible role names from runtime nicknames, and supports same-agent multi-instance sharding with explicit isolation, collision, and merge rules.
+- **Run artifact validation fixtures** — Added positive and negative fixtures for same-owner sharded execution and overlapping shard rejection.
+
+### Changed
+
+- **Capability-first orchestration** — Every business lane now records global agent/skill search evidence, selected owner, selection reason, and coverage status before worker packets are created.
+- **Owner gap handling** — Existing owner reuse, owner upgrade, and new owner creation are now explicit `agentBlueprintPacket` decisions with required gap/card follow-through when coverage is missing.
+- **Run index ownership** — Owner queries now cover governance owners, execution owner agents, and business role names.
+
+### Fixed
+
+- **MCP agent inventory** — `meta-runtime-server` self-test now exposes all 9 meta agents, including `meta-chrysalis`.
+- **Static contract drift** — Project validation now checks the new blueprint packets, role fields, dispatch envelope fields, and worker shard fields.
+- **Cross-runtime documentation** — Runtime capability matrix now documents blueprint and role-naming parity across Claude, Codex, OpenClaw, and Cursor.
+
 ## [2.0.35] - 2026-05-20
 
 ### Changed

@@ -447,7 +447,7 @@ Before proceeding from Critical to Fetch, check:
   "bypassReasons": [],
   "requiresAgentOwner": true,
   "ownerRequired": true,
-  "ownerPolicy": "existing-owner | create-owner-first | temporary-fallback-owner",
+  "ownerPolicy": "reuse_existing_owner | upgrade_existing_owner | create_owner_first",
   "decisionSource": "classifier-v2",
   "classifierVersion": "v2",
   "skipLevel": "should-dispatch",
@@ -467,7 +467,21 @@ Before proceeding from Critical to Fetch, check:
 
 **Purpose**: Search for agents / skills whose "Own" boundary matches the capability needed.
 
-**⚠️ Execute all 5 steps in order — no skipping.**
+**⚠️ Execute all Fetch steps in order — no skipping.**
+
+**Step 0.5 — Project Graph Context** (auto-detection, runs before Step 1):
+```
+CHECK: Does graphify-out/graph.json exist in the target project root?
+  IF YES →
+    - Verify freshness: compare graph.json mtime against git log last commit
+    - If stale → run `graphify --update` (incremental, SHA256 cache)
+    - Load graph metadata: node count, edge count, confidence distribution
+    - Quality gate: if AMBIGUOUS nodes > 30% OR total nodes < 10 → mark as low-quality, agents use direct Read as primary
+    - Record graphContext in Fetch output for downstream stages
+  IF NO →
+    - For Meta_Kim itself: fail the governance run and require `npm run meta:graphify:check` / graph rebuild before execution.
+    - For external target projects: record graph absence in Fetch output and decide whether graph generation is required for the task.
+```
 
 **Step 1 — Local agent scan**:
 ```
@@ -501,19 +515,42 @@ Using the SAME capability keywords from Step 1–1.5:
 
 **Why Step 1.6 runs during Fetch, not Evolution**: The first run must already know which skills to use. Evolution only caches the discovery for faster future runs. Skill ignorance on first run = agent does worse work for no reason.
 
-**Step 0.5 — Project Graph Context** (auto-detection, runs before Step 1):
+**Step 1.7 — Business-flow capability matrix** (run before final owner selection):
+
+For executable deliverables, infer the likely `deliverableType` and expand it into business lanes before dispatching. The system must not only route the most obvious technical role.
+
+| Deliverable type | Lanes to consider before omission |
+|---|---|
+| `web_app` / `dashboard` | product, UX, UI, frontend, backend/API, database/data, auth/security, motion, accessibility, test automation, browser QA, performance, release, feedback, evolution |
+| `landing_page` | product offer, UX, UI, visual assets, frontend, motion, accessibility, SEO/analytics, browser QA, performance, release |
+| `api_service` | API contract, backend, database, auth/security, integration tests, performance, docs, release |
+| `data_pipeline` | data source, schema, transform, storage, observability, quality tests, privacy/security, release |
+| `custom` | infer lanes from the user's outcome and justify omissions |
+
+Each lane becomes a capability slot with:
+
+```json
+{
+  "businessPhase": "planning | execution | review | verify | feedback | evolve | mirror",
+  "spineStage": "Fetch | Thinking | Execution | Review | Verification | Evolution",
+  "capabilityNeed": "frontend implementation",
+  "capabilitySearchQuery": "frontend implementation owner + relevant skills",
+  "ownerLayer": "execution",
+  "candidateOwners": [],
+  "candidateSkills": [],
+  "selectedOwner": null,
+  "selectionReason": "why this owner best covers the lane",
+  "coverageStatus": "covered | partial | missing | omitted_with_reason",
+  "toolsOrMcp": [],
+  "parallelPolicy": "single | shardable | same-agent-multi-instance | exclusive",
+  "dependsOn": [],
+  "mergeOwner": "business-readable role name",
+  "gapAction": "reuse_existing_owner | upgrade_existing_owner | create_owner_first",
+  "validation": []
+}
 ```
-CHECK: Does graphify-out/graph.json exist in the target project root?
-  IF YES →
-    - Verify freshness: compare graph.json mtime against git log last commit
-    - If stale → run `graphify --update` (incremental, SHA256 cache)
-    - Load graph metadata: node count, edge count, confidence distribution
-    - Quality gate: if AMBIGUOUS nodes > 30% OR total nodes < 10 → mark as low-quality, agents use direct Read as primary
-    - Record graphContext in Fetch output for downstream stages
-  IF NO →
-    - For Meta_Kim itself: fail the governance run and require `npm run meta:graphify:check` / graph rebuild before execution.
-    - For external target projects: record graph absence in Fetch output and decide whether graph generation is required for the task.
-```
+
+The Fetch record must show which lanes were covered, which were omitted, and why. Each lane must preserve the global scan evidence (`capabilitySearchQuery`, `candidateOwners`, `candidateSkills`, `selectedOwner`, `selectionReason`, `coverageStatus`) so Review can tell whether the owner was selected capability-first. Omitted lanes without reasons fail the Review stage.
 
 **Step 2 — Capability index search** (if no perfect local match):
 ```
@@ -649,8 +686,9 @@ ELSE (gap is one-off / emergency)
 
 | Situation | Resolution |
 |----------|------------|
-| Existing owner covers the work | Dispatch to that owner |
-| No owner, but gap is recurring / strategic / project-specific | Create or compose the owner first (Type B) |
+| Existing owner covers the work | `ownerResolution = reuse_existing_owner`; dispatch to that owner |
+| Existing owner partially covers the work but needs a durable boundary update | `ownerResolution = upgrade_existing_owner`; emit `capabilityGapPacket`, then require `executionAgentCard` before dispatch |
+| No owner, but gap is recurring / strategic / project-specific | `ownerResolution = create_owner_first`; create or compose the owner first (Type B), then require `executionAgentCard` |
 | No owner, gap is one-off and low-risk | Use a temporary `generalPurpose` owner and mark it for Evolution review |
 
 Temporary fallback is a **transition state**, not a mature architecture state.
@@ -714,7 +752,7 @@ This is a **preference**, not a hard rule — if the lightweight agent escalates
   ],
   "selected": { "name": "code-reviewer", "score": 3 },
   "capabilityGap": null,
-  "ownerMode": "existing-owner",
+  "ownerMode": "reuse_existing_owner",
   "createOwnerRecommended": false,
   "temporaryOwnerJustification": null,
   "fallbackUsed": false
@@ -754,13 +792,23 @@ Break Stage 1's task into independent sub-tasks:
     {
       "id": 1,
       "description": "what specifically to do",
-      "owner": "agent name from Stage 2",
-      "ownerMode": "existing-owner | create-owner-first | temporary-fallback-owner",
+      "owner": "business-readable role display name",
+      "ownerAgent": "agent type from Stage 2",
+      "businessRoleId": "frontend",
+      "roleDisplayName": "frontend-home-page",
+      "roleInstanceId": "frontend#home-page",
+      "runtimeInstanceAlias": "optional host nickname only",
+      "ownerMode": "reuse_existing_owner | upgrade_existing_owner | create_owner_first",
       "parallel": true,
       "parallelGroup": "group-a",
       "dependsOn": [],
       "mergeOwner": "agent responsible for consolidation",
       "taskPacketId": "task-001",
+      "shardKey": "route | component-area | file-scope | test-suite | data-domain",
+      "shardScope": ["specific files, routes, modules, or test suite"],
+      "workspaceIsolation": "same_workspace_readonly_overlap | isolated_worktree | file_lock_required",
+      "artifactNamespace": "frontend-home-page",
+      "collisionPolicy": "no_overlap | merge_by_owner | lock_required",
       "fileScope": ["file-or-module-a", "file-or-module-b"],
       "constraints": ["boundary1", "dependency1"],
       "recommendedSkills": ["skill-id-1", "skill-id-2"]
@@ -770,6 +818,10 @@ Break Stage 1's task into independent sub-tasks:
 ```
 
 `recommendedSkills` comes from Fetch Step 1.6 — skills discovered via search index + agent's own `recommended_skills` YAML field (cached by previous Evolution runs). During Execution, include these skill references in the agent's dispatch prompt so the agent invokes them during work.
+
+**Business-readable naming rule**: The user-facing `owner` / `roleDisplayName` must explain the work, not the platform nickname. Use names such as `ux-flow-review`, `frontend-dashboard-table`, `database-migration`, `browser-qa-mobile`. Random personal aliases assigned by the host runtime are stored only in `runtimeInstanceAlias`; they must not appear as the primary role name in the task board or final summary.
+
+**Same-agent multi-instance rule**: The same `ownerAgent` can appear in multiple packets when the work is shardable. This is valid only when each packet has a distinct `roleInstanceId`, `shardKey`, non-overlapping or locked `shardScope`, explicit `workspaceIsolation`, a unique `artifactNamespace`, an explicit `collisionPolicy`, and one unified `mergeOwner` for the parallel group. Without those fields, repeated ownerAgent entries are treated as fake parallelism and fail the decomposition gate.
 
 ### Step 3.5: Protocol-First Dispatch Artifacts
 
@@ -860,16 +912,83 @@ Thinking must lock down the execution protocol before any `Agent` tool invocatio
   "dispatchBoard": {
     "boardId": "dispatch-001",
     "goal": "one sentence goal",
-    "ownerResolution": "existing-owner | create-owner-first | temporary-fallback-owner"
+    "ownerResolution": "reuse_existing_owner | upgrade_existing_owner | create_owner_first"
+  },
+  "businessFlowBlueprintPacket": {
+    "deliverableType": "web_app",
+    "requiredLanes": [
+      {
+        "laneId": "lane-frontend",
+        "businessLane": "frontend",
+        "capabilityNeed": "frontend implementation",
+        "capabilitySearchQuery": "frontend implementation owner + UI skills",
+        "candidateOwners": ["frontend-developer", "fullstack-engineer"],
+        "candidateSkills": ["browser", "react-best-practices"],
+        "selectedOwner": "frontend-developer",
+        "selectionReason": "Own boundary covers route and component implementation",
+        "coverageStatus": "covered"
+      }
+    ],
+    "optionalLanes": [
+      {
+        "laneId": "lane-motion",
+        "businessLane": "motion",
+        "capabilityNeed": "interaction animation",
+        "capabilitySearchQuery": "motion interaction owner",
+        "candidateOwners": [],
+        "candidateSkills": [],
+        "selectedOwner": null,
+        "selectionReason": "No motion requirement in user outcome",
+        "coverageStatus": "omitted_with_reason"
+      }
+    ],
+    "omittedLanes": [{ "lane": "database", "reason": "static-only site with no persisted user data" }],
+    "laneDependencies": [{ "from": "ux", "to": "frontend", "type": "handoff" }],
+    "coverageJudgment": "complete | incomplete | intentionally_reduced",
+    "blueprintSource": "canonical_template | inferred | user_supplied",
+    "blueprintVersion": "v1"
+  },
+  "agentBlueprintPacket": {
+    "roles": [
+      {
+        "businessRoleId": "frontend",
+        "roleDisplayName": "frontend-home-page",
+        "ownerAgent": "frontend-developer",
+        "capabilityNeed": "frontend implementation",
+        "assignedResponsibilitySlice": "Implement the home route UI from the UX and UI handoff",
+        "ownerResponsibilityDelta": "Reuse existing frontend implementation boundary; narrow it to home route files",
+        "agentIterationPlan": "Dispatch with exact route scope, approved skills, shard rules, and verification steps",
+        "ownerResolution": "reuse_existing_owner",
+        "minInstances": 1,
+        "maxInstances": 3,
+        "parallelizable": true,
+        "handoffInputs": ["ux-flow", "ui-spec"],
+        "handoffOutputs": ["implemented route"]
+      }
+    ],
+    "roleCoverageGate": "pass | fail",
+    "missingRoles": [],
+    "duplicateRolePolicy": "allow_instances_when_sharded",
+    "namingPolicy": "business-readable names required; runtime nicknames are aliases only"
   },
   "workerTaskPackets": [
     {
       "packetId": "task-001",
-      "owner": "agent name",
-      "ownerMode": "existing-owner",
+      "owner": "frontend-home-page",
+      "ownerAgent": "frontend-developer",
+      "businessRoleId": "frontend",
+      "roleDisplayName": "frontend-home-page",
+      "roleInstanceId": "frontend#home-page",
+      "runtimeInstanceAlias": "optional host nickname only",
+      "ownerMode": "reuse_existing_owner",
       "dependsOn": [],
       "parallelGroup": "group-a",
       "mergeOwner": "agent name",
+      "shardKey": "route",
+      "shardScope": ["home"],
+      "workspaceIsolation": "same_workspace_readonly_overlap",
+      "artifactNamespace": "frontend-home-page",
+      "collisionPolicy": "no_overlap",
       "deliverableLink": "how this packet connects back to the primary deliverable",
       "recommendedSkills": ["skill-id-1", "skill-id-2"]
     }
@@ -881,7 +1000,9 @@ Thinking must lock down the execution protocol before any `Agent` tool invocatio
 }
 ```
 
-Independent work that can be parallelized must be marked with the same `parallelGroup`. Any task that has no declared `owner`, `dependsOn`, and `mergeOwner` is not ready for Execution.
+If `agentBlueprintPacket.roleCoverageGate` is `fail`, `missingRoles` is non-empty, or any role has `ownerResolution` of `upgrade_existing_owner` or `create_owner_first`, Thinking must emit a `capabilityGapPacket` and require an approved `executionAgentCard` before any Stage 4 dispatch. The role may not be replaced with a generic worker unless the gap is explicitly recorded and approved as an emergency fallback.
+
+Independent work that can be parallelized must be marked with the same `parallelGroup`. Any task that has no declared `owner`, `ownerAgent`, `businessRoleId`, `roleDisplayName`, `roleInstanceId`, `dependsOn`, `shardKey`, `shardScope`, `workspaceIsolation`, `artifactNamespace`, `collisionPolicy`, and `mergeOwner` is not ready for Execution.
 
 ### Step 3.6: Decomposition Acceptance Gate
 
@@ -891,7 +1012,12 @@ Before proceeding to Step 4, the plan must pass this gate:
 |-------|-----------|-------------|
 | **Multi-file / multi-capability** | Task spans >1 file OR >1 capability dimension | MUST produce >= 2 `workerTaskPackets` |
 | **Single-Packet Anti-Pattern** | Only 1 packet produced for a multi-file / multi-capability task | REJECT — re-decompose or justify why a single packet is genuinely sufficient (single-file, single-capability, pure logic change) |
-| **Packet completeness** | Every packet has non-empty `owner`, `dependsOn` (or explicit `[]`), `parallelGroup`, `mergeOwner` | REJECT — fill missing fields |
+| **Business-flow coverage** | `businessFlowBlueprintPacket` covers expected lanes or documents omitted lanes with reasons | REJECT — add missing lanes or omission reasons |
+| **Business-readable role names** | `roleDisplayName` describes the responsibility; runtime nicknames are aliases only | REJECT — replace personal/random names with business role names |
+| **Role responsibility assignment** | Every `agentBlueprintPacket.roles[]` entry declares `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, and `ownerResolution` | REJECT — fill the role iteration fields before worker packets |
+| **Role coverage gap** | Failed `roleCoverageGate`, non-empty `missingRoles`, or `ownerResolution = upgrade_existing_owner | create_owner_first` has `capabilityGapPacket` and approved `executionAgentCard` | REJECT — create or upgrade the owner first |
+| **Same-agent multi-instance** | Repeated `ownerAgent` entries have unique `roleInstanceId`, shard scope, artifact namespace, isolation/collision policy, and one merge owner | REJECT — add shard/merge rules or make the work sequential |
+| **Packet completeness** | Every packet has non-empty `owner`, `ownerAgent`, `businessRoleId`, `roleDisplayName`, `roleInstanceId`, `dependsOn` (or explicit `[]`), `parallelGroup`, `mergeOwner`, `shardKey`, `shardScope` | REJECT — fill missing fields |
 
 Single-packet justification is only valid when ALL of: (1) exactly 1 file, (2) exactly 1 capability dimension, (3) no cross-module impact, (4) no durable artifact handoff.
 

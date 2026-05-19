@@ -617,6 +617,8 @@ describe("End-to-End: Complete 8-Stage Spine Integration", () => {
       "cardPlanPacket",
       "dispatchEnvelopePacket",
       "orchestrationTaskBoardPacket",
+      "businessFlowBlueprintPacket",
+      "agentBlueprintPacket",
       "workerTaskPackets",
       "reviewPacket",
       "verificationPacket",

@@ -270,7 +270,7 @@
       "lengthExpectation": "targeted multi-file change",
       "visualOrAssetPlan": "none",
       "dependsOn": [],
-      "parallelGroup": "auth-core",
+      "parallelGroup": "auth-parallel",
       "mergeOwner": "meta-warden",
       "verifySteps": [
         {
@@ -294,6 +294,44 @@
       "workspaceIsolation": "same_workspace_readonly_overlap",
       "artifactNamespace": "auth-refresh-implementation",
       "collisionPolicy": "no_overlap"
+    },
+    {
+      "taskPacketId": "task-002",
+      "owner": "auth-refresh-implementation",
+      "ownerMode": "existing-owner",
+      "todayTask": "update refresh-token tests for env-only behavior",
+      "output": "code diff + verification notes",
+      "deliverableLink": "auth-refresh-hardening:test-coverage",
+      "qualityBar": "no hardcoded secret and review finding fully closable",
+      "referenceDirection": "follow auth boundary rules",
+      "handoffTarget": "meta-prism",
+      "lengthExpectation": "targeted multi-file change",
+      "visualOrAssetPlan": "none",
+      "dependsOn": [],
+      "parallelGroup": "auth-parallel",
+      "mergeOwner": "meta-prism",
+      "verifySteps": [
+        {
+          "step": "replace inline secret fallback with env lookup",
+          "verify": "no hardcoded secret in refresh.ts"
+        },
+        {
+          "step": "update refresh.test.ts for new env-based path",
+          "verify": "test suite passes"
+        }
+      ],
+      "ownerAgent": "auth-specialist",
+      "businessRoleId": "auth-refresh",
+      "roleDisplayName": "auth-refresh-implementation",
+      "roleInstanceId": "auth-refresh-implementation#2",
+      "runtimeInstanceAlias": "",
+      "shardKey": "file-scope",
+      "shardScope": [
+        "auth-refresh-hardening:token-refresh"
+      ],
+      "workspaceIsolation": "same_workspace_readonly_overlap",
+      "artifactNamespace": "auth-refresh-implementation-tests",
+      "collisionPolicy": "no_overlap"
     }
   ],
   "workerResultPackets": [
@@ -303,6 +341,16 @@
       "status": "completed",
       "producedArtifacts": [
         "src/auth/refresh.ts",
+        "tests/auth/refresh.test.ts"
+      ],
+      "handoffTarget": "meta-prism",
+      "blockingIssues": []
+    },
+    {
+      "taskPacketId": "task-002",
+      "owner": "auth-refresh-implementation",
+      "status": "completed",
+      "producedArtifacts": [
         "tests/auth/refresh.test.ts"
       ],
       "handoffTarget": "meta-prism",

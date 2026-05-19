@@ -319,6 +319,37 @@ Capability index layers: (1) repo canonical (2) runtime mirrors (3) local global
 
 **Skill ROI filter**: when several skills could apply, score them with `ROI = (Task Coverage x Usage Frequency) / (Context Cost + Learning Curve)`. Choose the highest useful ROI skill set, not the largest skill set. Low-ROI skills stay out of the prompt unless Fetch finds a specific capability gap they cover.
 
+**Business-flow capability matrix (mandatory for executable deliverables)**: Fetch must expand a user request into a complete business-flow capability matrix before choosing agents. Do not only search for the first obvious role. For each deliverable type, list the lanes that may be needed, then capability-match every lane:
+
+| Deliverable type | Default lanes to consider |
+|---|---|
+| `web_app` / `dashboard` | product, UX, UI, frontend, backend/API, database/data, auth/security, motion, accessibility, tests, browser QA, performance, release, feedback, evolution |
+| `landing_page` | product offer, UX, UI, visual assets, frontend, motion, accessibility, SEO/analytics, browser QA, performance, release |
+| `api_service` | product/API contract, backend, database, auth/security, integration tests, performance, docs, release |
+| `data_pipeline` | data source, schema, transform, storage, observability, quality tests, privacy/security, release |
+| `custom` | infer lanes from user outcome, then justify omissions |
+
+Output this as `businessFlowBlueprintPacket` with `requiredLanes`, `optionalLanes`, `omittedLanes` with reasons, `laneDependencies`, and `coverageJudgment`. Each lane object must include Fetch evidence from a global capability scan: `capabilitySearchQuery`, `candidateOwners`, `candidateSkills`, `selectedOwner`, `selectionReason`, and `coverageStatus` (`covered | partial | missing | omitted_with_reason`). A lane can be intentionally omitted only with a plain-language reason, e.g. "static page, no persisted user data".
+
+**Business-readable agent naming (hard rule)**:
+- User-visible role names must describe the business responsibility: `frontend-home-page`, `database-schema`, `ux-flow-review`, `browser-qa-mobile`, `security-auth-review`.
+- Do not expose host-generated personal nicknames as the primary role name. Names like `Huygens`, `Mill`, or other random person-style aliases are allowed only in `runtimeInstanceAlias`.
+- Separate the layers:
+  - `businessRoleId`: stable responsibility family, e.g. `frontend`, `database`, `browser-qa`.
+  - `roleDisplayName`: user-facing business name, e.g. `frontend-home-page`.
+  - `ownerAgent`: matched execution agent type from Fetch, e.g. `frontend-developer`.
+  - `roleInstanceId`: per-run instance id, e.g. `frontend#home-page`.
+  - `runtimeInstanceAlias`: optional platform nickname, never the primary name.
+- `agentBlueprintPacket.roles[]` must also record the responsibility assignment decision:
+  - `assignedResponsibilitySlice`: exact work slice this role owns in the current run.
+  - `ownerResponsibilityDelta`: how the selected owner's current boundary must be reused, narrowed, or expanded.
+  - `agentIterationPlan`: what to refine in the owner prompt/card before dispatch.
+  - `ownerResolution`: `reuse_existing_owner | upgrade_existing_owner | create_owner_first`.
+
+**Role coverage gap rule**: if `roleCoverageGate = fail`, `missingRoles` is non-empty, or any role has `ownerResolution = upgrade_existing_owner | create_owner_first`, then output `capabilityGapPacket` and require an approved `executionAgentCard` before Execution. A missing or weak owner is not allowed to slip through as a vaguely named worker.
+
+**Same-agent multi-instance rule**: The same `ownerAgent` may be spawned more than once in parallel when the work is shardable. Each instance must have a unique `roleInstanceId`, `shardKey`, `shardScope`, `workspaceIsolation`, `artifactNamespace`, `collisionPolicy`, `parallelGroup`, and a unified `mergeOwner` for the parallel group. If two instances share files or decisions without a merge/lock policy, they are not parallel; make them sequential or split the design owner first.
+
 ### Fetch Record Gate (mandatory before advancing to Thinking)
 
 After completing Fetch Steps 1–3, update the spine state with a `fetchRecord` field:
@@ -409,6 +440,8 @@ Agent(
 | `reuse_existing_owner` | Fetch found match; route to existing agent |
 | `accepted_gap` | Non-critical; documented and deferred |
 
+Map this to `agentBlueprintPacket.roles[].ownerResolution` as: `reuse_existing_owner` for direct reuse, `upgrade_existing_owner` for `upgrade_execution_agent`, and `create_owner_first` for `create_execution_agent`. Owner creation or upgrade requires both `capabilityGapPacket` and `executionAgentCard` before Execution.
+
 ### Station Deliverable Contract (Mandatory)
 
 Every station must leave explicit deliverables:
@@ -482,7 +515,7 @@ After each stage completes, update the spine state: set current stage to `comple
 |---|---|---|
 | 1 | Critical | Clarify scope, ask if ambiguous. Update spine state `currentStage: "critical"` |
 | 2 | Fetch | **3-step capability discovery** (keyword → search → invoke). Update spine state `currentStage: "fetch"` |
-| 3 | Thinking | Plan sub-tasks with owners/dependencies; explore ≥2 paths; **create planning files (task_plan.md, findings.md, progress.md) — MANDATORY supplement, see Step 3.7**; produce protocol artifacts (`runHeader`, `dispatchBoard`, `workerTaskPackets`). **Minimum Decomposition Rule**: when task involves >1 file or >1 capability dimension, `workerTaskPackets` MUST contain >=2 packets. A single-packet plan equals no decomposition — violates "Dispatch Before You Execute." Each packet must have non-empty `owner`, `dependsOn` (or explicit `"dependsOn": []`), `parallelGroup`, and `mergeOwner`. Update spine state `currentStage: "thinking"` |
+| 3 | Thinking | Plan sub-tasks with owners/dependencies; explore ≥2 paths; **create planning files (task_plan.md, findings.md, progress.md) — MANDATORY supplement, see Step 3.7**; produce protocol artifacts (`runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchBoard`, `workerTaskPackets`). **Blueprint-first Rule**: business lanes and role blueprint come before worker packets. **Minimum Decomposition Rule**: when task involves >1 file or >1 capability dimension, `workerTaskPackets` MUST contain >=2 packets. A single-packet plan equals no decomposition — violates "Dispatch Before You Execute." Each packet must have non-empty `owner`, `ownerAgent`, `businessRoleId`, `roleDisplayName`, `roleInstanceId`, `dependsOn` (or explicit `"dependsOn": []`), `parallelGroup`, `mergeOwner`, `shardKey`, and `shardScope`. Update spine state `currentStage: "thinking"` |
 | 4 | **Execution** | **Dispatch to agents via `Agent()` tool** — every sub-task has an owner; independent tasks run parallel. Update spine state `currentStage: "execution"`. **Update progress.md with agent outputs.** **Enforcement hook blocks execution tools until at least one Agent dispatch is recorded.** |
 | 5 | Review | Inspect outputs via capability-matched reviewer. Update spine state `currentStage: "review"`. **Update progress.md with review findings; update findings.md with issues.** |
 | 6 | Meta-Review | Check review standards. Update spine state `currentStage: "meta_review"`. **Update task_plan.md phase statuses.** |
@@ -491,7 +524,9 @@ After each stage completes, update the spine state: set current stage to `comple
 
 Stage 2 is the gate — do not skip to Stage 3/4. Stage 4 requires protocol artifacts from Stage 3.
 
-**Protocol-first Dispatch**: produce `runHeader`, `dispatchBoard`, and `workerTaskPackets` (with `dependsOn`, `parallelGroup`, `mergeOwner` fields) before Stage 4 begins. Stage 4 may not start until all protocol artifacts are ready.
+**Protocol-first Dispatch**: produce `runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchBoard`, and `workerTaskPackets` (with `dependsOn`, `parallelGroup`, `mergeOwner`, business-readable role names, and instance/shard fields) before Stage 4 begins. Stage 4 may not start until all protocol artifacts are ready.
+
+**Agent blueprint gate**: Before spawning agents, validate that every visible role has a business-readable `roleDisplayName`; every selected agent came from Fetch-first capability matching; every role declares `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, and `ownerResolution`; all repeated `ownerAgent` entries have distinct `roleInstanceId`, non-overlapping or explicitly locked `shardScope`, explicit `workspaceIsolation`, unique `artifactNamespace`, `collisionPolicy`, and a unified `mergeOwner`; and every omitted business lane has a human-readable reason. FAIL means return to Thinking and, when coverage is missing or owner creation/upgrade is needed, produce `capabilityGapPacket` plus `executionAgentCard` before Execution.
 
 **Option Exploration (MANDATORY)**: at Stage 3, enumerate ≥2 solution paths with Pros/Cons or a Decision Record (rejected alternatives must be documented). This is not optional — every non-trivial task requires explicit option comparison.
 
