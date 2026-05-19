@@ -45,11 +45,28 @@ Distinguish early: **Meta Architecture** (agent governance, collaboration relati
 
 **Important note: Architecture Type Distinction** — never collapse meta governance questions with repo technical stack questions; clarify which kind of "architecture" the user means.
 
-## Clarity Gate
+## Clarity Gate (MANDATORY USER CONFIRMATION)
+
+**HARD RULE**: For ALL meta-theory invocations, you MUST use the native confirmation mechanism at the Critical stage to confirm:
+
+1. **Task Type Confirmation**: Show the inferred Type (A/B/C/D/E) and ask user to confirm
+2. **Scope Confirmation**: Show the analyzed scope and ask if correct
+3. **Approach Confirmation**: Show the proposed approach and ask for approval
+
+**Implementation** (DO NOT SKIP):
+```
+When meta-theory is activated:
+  → IMMEDIATELY invoke the platform's native question tool with:
+    - Question: "确认任务类型和处理方式"
+    - Options: [Type A/B/C/D/E with descriptions]
+    - Wait for user response before any other action
+```
 
 Track ambiguity on **Scope**, **Goal**, **Constraints**, and **Architecture type**:
 - **≥2 dimensions ambiguous** → ask before dispatching
 - **Exactly 1 ambiguous** → state your assumption explicitly, then proceed
+
+**This is non-negotiable**: Even if the task seems clear, you MUST ask for confirmation using the native confirmation mechanism.
 
 ## User Language and Native Choice Surfaces
 
@@ -59,12 +76,38 @@ User-facing text must follow the user's latest language or explicit language pre
 
 For `clarify`, `option_select`, and `confirm_execution` cards, prefer the current platform's native choice surface when it exists:
 
-| Runtime | Primary native surface | Fallback |
-|---|---|---|
-| Claude Code | native hook / prompt surface | localized conversation fallback |
-| Codex | native choice input when exposed by the active mode | localized conversation fallback |
-| OpenClaw | native agent / workspace choice mechanism when available | localized conversation fallback |
-| Cursor | native custom modes / mode picker | localized conversation fallback |
+| Runtime | Primary native surface | Fallback | Implementation |
+|---------|----------------------|----------|----------------|
+| Claude Code | native question tool | conversation_fallback | **✅ FULLY SUPPORTED** - Use native question tool directly |
+| Codex | native choice input | conversation_fallback | ⚠️ Depends on active mode; use conversation card as fallback |
+| OpenClaw | workspace agent mechanism | conversation_fallback | ⚠️ Requires proper workspace config; use conversation card |
+| Cursor | Custom Modes / mode picker | conversation_fallback | ⚠️ Runtime-dependent; use conversation card as fallback |
+
+**Platform-Specific Implementation**:
+
+1. **Claude Code**: Use the native question tool directly - this is the guaranteed path
+2. **Codex/OpenClaw/Cursor**: Emit a formatted conversation card and wait for user response
+
+**Claude Code Implementation (PRIMARY)**:
+```
+When meta-theory is activated on Claude Code:
+  → IMMEDIATELY invoke the native question tool with:
+    - questions: [Task Type, Scope, Approach]
+    - Wait for user response before any other action
+```
+
+**Fallback Implementation (Other Platforms)**:
+```
+When native surface is unavailable:
+  → Emit localized confirmation card in user's language:
+    ## Task Confirmation
+    - Type: [A/B/C/D/E with description]
+    - Scope: [specific scope description]
+    - Approach: [handling approach description]
+    - Please respond: Confirm / Modify / Cancel
+  → Record: nativeChoiceSurface = "conversation_fallback"
+  → Wait for explicit user selection
+```
 
 When a native surface is unavailable, do not pretend it exists. Emit the localized fallback card, record `nativeChoiceSurface`, and wait for explicit user selection before Execution.
 
@@ -137,9 +180,30 @@ If you are about to produce **>3 sentences** of execution-layer analysis, review
 
 **Parallelism**: independent sub-tasks get parallel `Agent` calls.
 
-## User Confirmation (Mandatory)
+## User Confirmation (MANDATORY ASKUserQuestion AT EVERY STAGE)
 
-After stages 1-3, show the plan and wait for confirmation:
+**HARD RULE**: Use the native confirmation mechanism at these mandatory checkpoints:
+
+### 1. After Critical (Task Classification)
+- Show inferred Type (A/B/C/D/E)
+- Show scope analysis
+- **MUST invoke the native confirmation before proceeding**
+
+### 2. After Thinking (Execution Plan)
+- Show dispatch board
+- Show planned agents
+- Show files to modify
+- **MUST invoke the native confirmation before Execution**
+
+### 3. After Review (Review Results)
+- Show quality findings
+- Show action items
+- **MUST invoke the native confirmation to confirm next steps**
+
+### 4. Before Verification
+- Show verification checklist
+- **MUST invoke the native confirmation to confirm closure**
+
 ```
 Execution Plan:
 - Type: [A/B/C/D/E]
@@ -148,6 +212,8 @@ Execution Plan:
 - Waiting for your confirmation.
 ```
 Execute only after the user confirms in their current language (for example "go", "do it", "按这个执行", or equivalent). The accepted confirmation words are examples, not a hardcoded language list.
+
+**THIS IS NON-NEGOTIABLE**: Skip-level confirmation bypass is FORBIDDEN. If native confirmation fails to trigger, pause and report the issue.
 
 ## Fetch-first Pattern (Search → Match → Invoke)
 

@@ -69,6 +69,7 @@ const EXPECTED_PUBLIC_DISPLAY_REQUIRES = [
 
 /** Documented in AGENTS.md / CLAUDE.md — project hook commands (Stop may list multiple). */
 const EXPECTED_CLAUDE_HOOK_COMMANDS = [
+  "node .claude/hooks/activate-meta-theory-spine.mjs",
   "node .claude/hooks/block-dangerous-bash.mjs",
   "node .claude/hooks/pre-git-push-confirm.mjs",
   "node .claude/hooks/enforce-agent-dispatch.mjs",

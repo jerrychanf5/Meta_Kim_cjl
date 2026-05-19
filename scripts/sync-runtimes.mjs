@@ -253,6 +253,12 @@ const canonicalSharedMemoryHookPath = path.join(
   "hooks",
   "meta-kim-memory-save.mjs",
 );
+const canonicalSharedSpineHookPath = path.join(
+  canonicalRuntimeAssetsDir,
+  "shared",
+  "hooks",
+  "activate-meta-theory-spine.mjs",
+);
 const canonicalOpenClawTemplatePath = path.join(
   canonicalRuntimeAssetsDir,
   "openclaw",
@@ -903,6 +909,7 @@ function nodeHookCommand(scriptPath, args = []) {
 export function buildCodexProjectHooksJson({
   graphifyHookPath = ".codex/hooks/graphify-context.mjs",
   memoryHookPath = ".codex/hooks/meta-kim-memory-save.mjs",
+  spineHookPath = ".codex/hooks/activate-meta-theory-spine.mjs",
 } = {}) {
   return {
     hooks: {
@@ -937,6 +944,18 @@ export function buildCodexProjectHooksJson({
             {
               type: "command",
               command: nodeHookCommand(graphifyHookPath),
+            },
+          ],
+        },
+      ],
+      Skill: [
+        {
+          matcher: "meta-theory",
+          hooks: [
+            {
+              type: "command",
+              command: nodeHookCommand(spineHookPath),
+              timeout: 5,
             },
           ],
         },
@@ -1426,6 +1445,47 @@ Examples:
       ) {
         changedFiles.push(`${dp.codexHooks}/meta-kim-memory-save.mjs`);
       }
+      const spineHookContent = await tryReadCanonical(canonicalSharedSpineHookPath);
+      if (
+        spineHookContent &&
+        (
+          await writeGeneratedFile(
+            path.join(dirs.codexHooksDir, "activate-meta-theory-spine.mjs"),
+            spineHookContent,
+          )
+        ).changed
+      ) {
+        changedFiles.push(`${dp.codexHooks}/activate-meta-theory-spine.mjs`);
+      }
+      // Sync shared hook dependencies (utils.mjs, spine-state.mjs)
+      const utilsHookContent = await tryReadCanonical(
+        path.join(canonicalRuntimeAssetsDir, "shared", "hooks", "utils.mjs"),
+      );
+      if (
+        utilsHookContent &&
+        (
+          await writeGeneratedFile(
+            path.join(dirs.codexHooksDir, "utils.mjs"),
+            utilsHookContent,
+          )
+        ).changed
+      ) {
+        changedFiles.push(`${dp.codexHooks}/utils.mjs`);
+      }
+      const spineStateHookContent = await tryReadCanonical(
+        path.join(canonicalRuntimeAssetsDir, "shared", "hooks", "spine-state.mjs"),
+      );
+      if (
+        spineStateHookContent &&
+        (
+          await writeGeneratedFile(
+            path.join(dirs.codexHooksDir, "spine-state.mjs"),
+            spineStateHookContent,
+          )
+        ).changed
+      ) {
+        changedFiles.push(`${dp.codexHooks}/spine-state.mjs`);
+      }
       const graphifyHookPath =
         scope === "global"
           ? path.join(dirs.codexHooksDir, "graphify-context.mjs")
@@ -1434,11 +1494,15 @@ Examples:
         scope === "global"
           ? path.join(dirs.codexHooksDir, "meta-kim-memory-save.mjs")
           : ".codex/hooks/meta-kim-memory-save.mjs";
+      const spineHookPath =
+        scope === "global"
+          ? path.join(dirs.codexHooksDir, "activate-meta-theory-spine.mjs")
+          : ".codex/hooks/activate-meta-theory-spine.mjs";
       if (
         (
           await writeGeneratedJson(
             dirs.codexHooksFile,
-            buildCodexProjectHooksJson({ graphifyHookPath, memoryHookPath }),
+            buildCodexProjectHooksJson({ graphifyHookPath, memoryHookPath, spineHookPath }),
           )
         ).changed
       ) {

@@ -326,24 +326,28 @@
     },
     "runtimeNativeChoiceSurfaces": {
       "claude": {
-        "primarySurface": "native_hook_prompt",
+        "primarySurface": "AskUserQuestion_tool",
         "fallbackSurfaces": ["conversation_fallback"],
-        "triggerDescription": "Use Claude Code native prompt/hook surfaces when available for clarify, option_select, and confirm_execution cards."
+        "triggerDescription": "Use AskUserQuestion tool directly - this is the GUARANTEED path for Critical/Fetch/Thinking/Review confirmation.",
+        "implementation": "Invoke AskUserQuestion with questions array; platform natively supports modal popup."
       },
       "codex": {
         "primarySurface": "native_choice",
         "fallbackSurfaces": ["conversation_fallback"],
-        "triggerDescription": "Use Codex native choice input when the active runtime mode exposes it; otherwise pause with a localized confirmation card."
+        "triggerDescription": "Use Codex native choice input when the active runtime mode exposes it; otherwise pause with a localized confirmation card.",
+        "implementation": "Emit markdown confirmation card; depends on active mode availability."
       },
       "openclaw": {
-        "primarySurface": "native_choice",
+        "primarySurface": "workspace_agent",
         "fallbackSurfaces": ["conversation_fallback"],
-        "triggerDescription": "Use OpenClaw native agent/workspace choice mechanisms when available; otherwise emit a localized runtime card and wait for explicit user selection."
+        "triggerDescription": "Use OpenClaw native agent/workspace choice mechanisms when available; otherwise emit a localized runtime card and wait for explicit user selection.",
+        "implementation": "Workspace-per-agent model; requires proper workspace configuration."
       },
       "cursor": {
         "primarySurface": "native_mode_picker",
         "fallbackSurfaces": ["conversation_fallback"],
-        "triggerDescription": "Use Cursor native custom modes/mode picker and project rules for Critical, Fetch, Thinking, and Review selection; dynamic popup support is runtime-dependent."
+        "triggerDescription": "Use Cursor native custom modes/mode picker and project rules for Critical, Fetch, Thinking, and Review selection; dynamic popup support is runtime-dependent.",
+        "implementation": "Custom Modes / mode picker UI; fallback to conversation card."
       }
     },
     "silencePolicy": {

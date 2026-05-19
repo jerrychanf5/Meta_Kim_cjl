@@ -21,8 +21,9 @@ export const OPENCLAW_WORKSPACE_MD = [
   "TOOLS.md",
 ];
 
-export const CLAUDE_HOOK_FILES = [
+export const SHARED_HOOK_FILES = [
   "block-dangerous-bash.mjs",
+  "activate-meta-theory-spine.mjs",
   "pre-git-push-confirm.mjs",
   "post-format.mjs",
   "post-typecheck.mjs",
@@ -33,6 +34,9 @@ export const CLAUDE_HOOK_FILES = [
   "stop-console-log-audit.mjs",
   "stop-completion-guard.mjs",
 ];
+
+// Legacy export alias for backwards compatibility
+export const CLAUDE_HOOK_FILES = SHARED_HOOK_FILES;
 
 export function expectedAgentProjectionFiles(
   extension,
