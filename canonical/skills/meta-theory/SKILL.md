@@ -47,12 +47,15 @@ Distinguish early: **Meta Architecture** (agent governance, collaboration relati
 
 ## Clarity Gate (UNIFIED CONFIRMATION AFTER THINKING)
 
-**RULE**: After Fetch and Thinking complete, BEFORE Execution, invoke a SINGLE comprehensive confirmation with 4+ questions, each with 3-4 options.
+**RULE**: For non-trivial non-query work, do not invoke a runtime question tool, native choice, or conversation fallback from intuition. First complete Fetch/content evidence, then Thinking/pre-decision option framing, then invoke a SINGLE comprehensive confirmation with 4+ questions, each with 3-4 options.
 
 **Timing**: At the transition from Thinking → Execution, after:
 - Critical stage (task classification)
 - Fetch stage (capability discovery and research)
-- Thinking stage (planning, option exploration, decomposition)
+- Fetch-stage `contentEvidencePacket` (local files, graph/capability sources, research capability discovery, research findings, and skip reasons when research is omitted)
+- Thinking-stage `preDecisionOptionFrame` (candidate orchestration choices, trade-offs, recommended default, and whether user choice is required)
+
+`preDecisionOptionFrame` is not a dispatch contract. It may name candidate owners, candidate lanes, and candidate task shapes so the user can choose. Final `dispatchEnvelopePacket`, `dispatchBoard`, and `workerTaskPackets` are produced only after the user chooses an option or an allowed skip is recorded.
 
 **Confirmation format** — minimum 4 questions, each with 3-4 options. Do not ask the user to choose between Type A/B/C/D/E directly; the system classifies the Type and shows it as context, then asks product-facing execution questions:
 
@@ -63,6 +66,7 @@ After Thinking completes, BEFORE any Execution:
 Context shown before the questions:
    - AI understanding: what the user wants and what result will be delivered
    - AI additions: missing details the system inferred or still needs
+   - Evidence basis: content inspected, retrieval capabilities discovered, searches performed, constraints found, and remaining uncertainty
    - Capability route: which agent/skill owner appears best after Fetch
    - Candidate paths: at least 2 viable ways to proceed
 
@@ -107,10 +111,12 @@ Wait for user response before proceeding to Execution.
 - Options must be meaningfully different (not cosmetic variations)
 
 **Proceed WITHOUT confirmation ONLY when**:
-- Task is purely read-only/analysis (no modifications)
-- User explicitly said "just do it" / "auto-proceed" / "不需要确认"
-- `queryBypass: true` in spine state
 - Task is trivial (single file, <10 lines change, low risk)
+- Task is purely read-only/analysis with `queryBypass: true`
+- User explicitly said "just do it" / "auto-proceed" / "不需要确认"
+- The skip reason is recorded in `preDecisionOptionFrame.choiceGateSkip` and `intentGatePacket.defaultAssumptions`
+
+Conductor owns evidence-lane validation and may not finalize dispatch until the choice or skip is recorded. Prism reviews whether the choice trigger/skip was valid and whether the option frame met the option quality standard.
 
 **DO NOT** ask for confirmation at each individual stage (Critical/Fetch/Thinking/Review). Ask ONCE after Thinking, before Execution.
 
@@ -237,6 +243,7 @@ If you are about to produce **>3 sentences** of execution-layer analysis, review
 
 Use the runtime's native confirmation mechanism when **ANY** of the following conditions are met:
 
+0. **Non-trivial executable work** is requested and the user did not explicitly choose auto-proceed
 1. **Multiple viable solutions** exist with clear trade-offs (not just cosmetic differences)
 2. **Product/Business direction** must be clarified (cannot be inferred technically)
 3. **Security or rollback risk** exists requiring explicit user acknowledgment
@@ -379,12 +386,13 @@ After completing Fetch Steps 1–3, update the spine state with a `fetchRecord` 
 **Research Validation** — required when the task involves external claims, library behavior, best practices, or factual analysis requiring verification:
 
 1. Identify the capability needed (e.g., "web search", "content retrieval", "documentation lookup")
-2. Discover available tools in the current runtime that match these capability descriptors — tool names differ across runtimes and user configurations, so discover them dynamically rather than hardcoding specific tool names
-3. Search across ≥5 distinct source categories: official docs, community knowledge, source repos, technical articles, standards/specs
-4. Record evidence in `fetchRecord.researchSources` with category, summary, and confidence level
-5. Cross-reference key claims against ≥2 independent sources; flag contradictions
+2. Produce `contentEvidencePacket.researchCapabilityDiscovery` by discovering current-runtime retrieval capabilities from actual tool inventory sources (`active_tools`, `deferred_tools`, MCP, plugins, skills, commands, capability indexes, or explicit user instruction). Record descriptor, provider kind, status, proof, limitations, selected research path, gaps, and Conductor validation. Do not use host-form-factor guesses such as `platformSurface`.
+3. Discover available tools in the current runtime that match these capability descriptors — tool names differ across runtimes and user configurations, so discover them dynamically rather than hardcoding specific tool names
+4. Search across ≥5 distinct source categories: official docs, community knowledge, source repos, technical articles, standards/specs
+5. Record evidence in `fetchRecord.researchSources` with category, summary, and confidence level
+6. Cross-reference key claims against ≥2 independent sources; flag contradictions
 
-**Gate**: The enforcement hook blocks Thinking stage execution if `fetchRecord` is missing, or if `researchRequired=true` but `researchValidationPerformed=false`.
+**Gate**: The enforcement hook blocks Thinking stage execution if `fetchRecord` is missing, if `contentEvidencePacket.researchCapabilityDiscovery` is missing when research is required, or if `researchRequired=true` but `researchValidationPerformed=false`.
 
 **Skip condition**: Research validation is NOT required when `governanceFlow = query`, task scope is entirely within local project files, or user explicitly says "skip research" / "local only".
 
@@ -522,8 +530,8 @@ After each stage completes, update the spine state: set current stage to `comple
 | # | Stage | Action |
 |---|---|---|
 | 1 | Critical | Clarify scope, ask if ambiguous. Update spine state `currentStage: "critical"` |
-| 2 | Fetch | **3-step capability discovery** (keyword → search → invoke). Update spine state `currentStage: "fetch"` |
-| 3 | Thinking | Plan sub-tasks with owners/dependencies; explore ≥2 paths; **create planning files (task_plan.md, findings.md, progress.md) — MANDATORY supplement, see Step 3.7**; produce protocol artifacts (`runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchBoard`, `workerTaskPackets`). **Blueprint-first Rule**: business lanes and role blueprint come before worker packets. **Minimum Decomposition Rule**: when task involves >1 file or >1 capability dimension, `workerTaskPackets` MUST contain >=2 packets. A single-packet plan equals no decomposition — violates "Dispatch Before You Execute." Each packet must have non-empty `owner`, `ownerAgent`, `businessRoleId`, `roleDisplayName`, `roleInstanceId`, `dependsOn` (or explicit `"dependsOn": []`), `parallelGroup`, `mergeOwner`, `shardKey`, and `shardScope`. Update spine state `currentStage: "thinking"` |
+| 2 | Fetch | **3-step capability discovery** (keyword → search → invoke), perform `researchCapabilityDiscovery` when research is required, and produce `contentEvidencePacket` before any user choice surface for non-trivial non-query work. Update spine state `currentStage: "fetch"` |
+| 3 | Thinking | Plan sub-tasks with owners/dependencies; explore ≥2 paths; produce `preDecisionOptionFrame` before runtime question tool / native choice / fallback; after user choice or recorded skip, **create planning files (task_plan.md, findings.md, progress.md) — MANDATORY supplement, see Step 3.7**; produce finalized protocol artifacts (`runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchEnvelopePacket`, `dispatchBoard`, `workerTaskPackets`). **Blueprint-first Rule**: business lanes and role blueprint come before worker packets. **Minimum Decomposition Rule**: when task involves >1 file or >1 capability dimension, `workerTaskPackets` MUST contain >=2 packets. A single-packet plan equals no decomposition — violates "Dispatch Before You Execute." Each packet must have non-empty `owner`, `ownerAgent`, `businessRoleId`, `roleDisplayName`, `roleInstanceId`, `dependsOn` (or explicit `"dependsOn": []`), `parallelGroup`, `mergeOwner`, `shardKey`, and `shardScope`. Update spine state `currentStage: "thinking"` |
 | 4 | **Execution** | **Dispatch to agents via `Agent()` tool** — every sub-task has an owner; independent tasks run parallel. Update spine state `currentStage: "execution"`. **Update progress.md with agent outputs.** **Enforcement hook blocks execution tools until at least one Agent dispatch is recorded.** |
 | 5 | Review | Inspect outputs via capability-matched reviewer. Update spine state `currentStage: "review"`. **Update progress.md with review findings; update findings.md with issues.** |
 | 6 | Meta-Review | Check review standards. Update spine state `currentStage: "meta_review"`. **Update task_plan.md phase statuses.** |
@@ -532,7 +540,7 @@ After each stage completes, update the spine state: set current stage to `comple
 
 Stage 2 is the gate — do not skip to Stage 3/4. Stage 4 requires protocol artifacts from Stage 3.
 
-**Protocol-first Dispatch**: produce `runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchBoard`, and `workerTaskPackets` (with `dependsOn`, `parallelGroup`, `mergeOwner`, short business role names, and instance/shard fields) before Stage 4 begins. Stage 4 may not start until all protocol artifacts are ready.
+**Protocol-first Dispatch**: produce `contentEvidencePacket` and `preDecisionOptionFrame` before the user choice surface; produce finalized `runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchEnvelopePacket`, `dispatchBoard`, and `workerTaskPackets` (with `dependsOn`, `parallelGroup`, `mergeOwner`, short business role names, and instance/shard fields) only after the user choice or an allowed recorded skip. Stage 4 may not start until all protocol artifacts are ready.
 
 **Agent blueprint gate**: Before spawning agents, validate that every visible role has a short business `roleDisplayName`; every selected agent came from Fetch-first capability matching; every role declares `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, and `ownerResolution`; all repeated `ownerAgent` entries have distinct `roleInstanceId`, non-overlapping or explicitly locked `shardScope`, explicit `workspaceIsolation`, unique `artifactNamespace`, `collisionPolicy`, and a unified `mergeOwner`; and every omitted business lane has a human-readable reason. FAIL means return to Thinking and, when coverage is missing or owner creation/upgrade is needed, produce `capabilityGapPacket` plus `executionAgentCard` before Execution.
 

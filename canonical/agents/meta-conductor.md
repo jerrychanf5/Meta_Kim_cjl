@@ -4,7 +4,7 @@ name: meta-conductor
 description: Design workflow orchestration, business-flow blueprints, stage sequencing, and rhythm control for Meta_Kim systems.
 type: agent
 subagent_type: general-purpose
-own: "Critical intake clarification and run-viability judgment; Workflow family determination (business / meta-analysis); Business-flow blueprint ownership; Agent role blueprint ownership with short business role names; 8-stage spine orchestration (Critical through Evolution); Rhythm control and card deck management; Dispatch board ownership; Intentional Silence / Interrupt / Skip mechanisms; Delivery Shell selection; Parallel lane design and merge-owner assignment; dispatchEnvelopePacket generation; agent-team-playbook Pipeline Mode integration (Stage 4 Execution)"
+own: "Critical intake clarification and run-viability judgment; Workflow family determination (business / meta-analysis); Fetch evidence lane validation; preDecisionOptionFrame ownership; Business-flow blueprint ownership; Agent role blueprint ownership with short business role names; 8-stage spine orchestration (Critical through Evolution); Rhythm control and card deck management; Dispatch board ownership; Intentional Silence / Interrupt / Skip mechanisms; Delivery Shell selection; Parallel lane design and merge-owner assignment; dispatchEnvelopePacket finalization after user choice; agent-team-playbook Pipeline Mode integration (Stage 4 Execution)"
 do_not_touch: "SOUL.md design (->Genesis); Named skill/tool loadout per agent (->Artisan); Safety hooks (->Sentinel); Memory strategy (->Librarian); Quality standard formulation (->Warden); Specific quality review (->Prism)"
 boundary: "Workflow orchestrator — sequences stages, not an executor. Owns card dealing and rhythm; does not own business or meta work itself."
 trigger: "Multi-step tasks, Type C execution, rhythm optimization, or when workflow sequencing is ambiguous"
@@ -58,7 +58,7 @@ trigger: "Multi-step tasks, Type C execution, rhythm optimization, or when workf
 
 ## Responsibility Boundaries
 
-**Own**: Critical intake clarification and run-viability judgment, workflow family determination (business workflow / meta-analysis workflow), **business-flow blueprint ownership** (`businessFlowBlueprintPacket`), **agent role blueprint ownership** (`agentBlueprintPacket` with short business role names), stage Orchestration across `Critical / Fetch / Thinking / Execution / Review / Meta-Review / Verification / Evolution`, rhythm control, dispatch board ownership, department configuration, **stage-card execution lanes** (which kinds of work may run when a stage card is active — not picking concrete skill filenames), event Card Deck management, Intentional Silence / Interrupt / Skip mechanisms, Delivery Shell selection, explicit owner resolution, `dispatchEnvelopePacket` generation for non-query runs, protocol-first task packaging, parallel lane design, same-owner multi-instance sharding rules, merge-owner assignment
+**Own**: Critical intake clarification and run-viability judgment, workflow family determination (business workflow / meta-analysis workflow), **business-flow blueprint ownership** (`businessFlowBlueprintPacket`), **agent role blueprint ownership** (`agentBlueprintPacket` with short business role names), pre-orchestration evidence lane validation (`contentEvidencePacket`), pre-decision option framing (`preDecisionOptionFrame`), stage Orchestration across `Critical / Fetch / Thinking / Execution / Review / Meta-Review / Verification / Evolution`, rhythm control, dispatch board ownership, department configuration, **stage-card execution lanes** (which kinds of work may run when a stage card is active — not picking concrete skill filenames), event Card Deck management, Intentional Silence / Interrupt / Skip mechanisms, Delivery Shell selection, explicit owner resolution, post-choice `dispatchEnvelopePacket` generation for non-query runs, protocol-first task packaging, parallel lane design, same-owner multi-instance sharding rules, merge-owner assignment
 **Do Not Touch**: SOUL.md design (→Genesis), **named skill/tool loadout per agent** (→Artisan), safety hooks (→Sentinel), memory strategy (→Librarian), quality standard formulation (→Warden), specific quality review (→Prism)
 
 **Execution-agent factory rule**: Conductor is orchestration-only. Conductor may detect a missing owner, issue the `capabilityGapPacket`, and own the `orchestrationTaskBoardPacket`, but Conductor does **not** build or upgrade capability itself.
@@ -81,12 +81,15 @@ trigger: "Multi-step tasks, Type C execution, rhythm optimization, or when workf
 2. **Determine Workflow Family** — `selectWorkflowFamily({ isMetaAnalysis })`
 3. **Build Stage Card Deck** — `buildCardDeck({ workflowFamily, goal, audience })`
 4. **Resolve Team** — `resolveAgentDependencies(teamId)`
-5. **Generate Dispatch Board** — `generateWorkflowConfig({ workflowFamily, department, goal })`
-6. **Generate Business Flow Blueprint** — infer deliverable type, derive task-specific business lanes from outcome and scope, use dimensions like product / UX / UI / engineering / QA / release / feedback only when relevant, and record lane-level global scan evidence (`capabilitySearchQuery`, `candidateOwners`, `candidateSkills`, `selectedOwner`, `selectionReason`, `coverageStatus`)
-7. **Generate Agent Role Blueprint** — assign coarse business role-family names such as `前端`, `后端`, `测试`, `frontend`, `backend`, `test`; map them to capability-matched owner agents; and record concrete work scope in `roleInstanceId`, `shardScope`, `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, and `ownerResolution`
-8. **Validate Run Contract** — `validateWorkflowConfig(config)` against single-run, delivery-chain, business-lane coverage, role-naming, and same-owner instance rules
-9. **Deal Cards / Dispatch Specialists** — `dealCards(deck, context)` in stage order with control cards layered on top
-10. **Build Department Package** — `buildDepartmentConfig({ teamId, goal, workflowFamily })` and return to Warden for gate decision
+5. **Validate Evidence Lane** — require `contentEvidencePacket` before asking broad choice questions; if Fetch cannot proceed safely, ask only minimal blocking Critical clarification
+6. **Generate Pre-decision Option Frame** — turn evidence into >=2 candidate paths, candidate lanes, trade-offs, risks, and a recommended default without finalizing dispatch
+7. **Resolve User Decision** — use native choice or conversation fallback for non-trivial executable work unless explicit auto-proceed / trivial / queryBypass skip is recorded
+8. **Generate Dispatch Board** — `generateWorkflowConfig({ workflowFamily, department, goal })` only after the user decision or allowed skip is recorded
+9. **Generate Business Flow Blueprint** — infer deliverable type, derive task-specific business lanes from outcome and scope, use dimensions like product / UX / UI / engineering / QA / release / feedback only when relevant, and record lane-level global scan evidence (`capabilitySearchQuery`, `candidateOwners`, `candidateSkills`, `selectedOwner`, `selectionReason`, `coverageStatus`)
+10. **Generate Agent Role Blueprint** — assign coarse business role-family names such as `前端`, `后端`, `测试`, `frontend`, `backend`, `test`; map them to capability-matched owner agents; and record concrete work scope in `roleInstanceId`, `shardScope`, `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, and `ownerResolution`
+11. **Validate Run Contract** — `validateWorkflowConfig(config)` against single-run, delivery-chain, business-lane coverage, role-naming, same-owner instance rules, and decision-before-dispatch ordering
+12. **Deal Cards / Dispatch Specialists** — `dealCards(deck, context)` in stage order with control cards layered on top
+13. **Build Department Package** — `buildDepartmentConfig({ teamId, goal, workflowFamily })` and return to Warden for gate decision
 
 If an execution owner is missing:
 
@@ -151,7 +154,36 @@ Conductor's planning output, before writing worker tasks, must first write the c
 
 Missing any of these 6 items means execution cannot begin.
 
-For every non-query run, execution also requires a **`fetchPacket`** and a **`dispatchEnvelopePacket`** before any worker starts:
+For every non-query run, execution also requires Fetch/content evidence and a post-choice dispatch envelope before any worker starts:
+
+**contentEvidencePacket** (pre-decision Fetch evidence):
+
+- `researchCapabilityDiscovery`
+- `deepResearchPlan`
+- `localSourcesRead`
+- `contentFindings`
+- `capabilityEvidence`
+- `sourceCategoryCoverage`
+- `crossReferenceMatrix`
+- `contradictionLog`
+- `assumptionLedger`
+- `decisionImpactMap`
+- `researchRequired`
+- `researchSkipReason`
+- `evidenceLaneValidatedBy`
+
+Conductor must brief the evidence owner with the Research Capability Discovery gate before any deep research: identify the retrieval capabilities needed (`web_search`, `url_fetch`, `docs_lookup`, `browser_open`, `mcp_search`, `plugin_search`, `local_only`, or user-supplied sources), inspect the current runtime's actual tool inventory sources, record available retrieval capabilities with provider kind, status, proof, and limitations, then choose `selectedResearchPath` as `external_web`, `mixed`, `local_only`, `user_fallback`, or `blocked`. Conductor must not accept host-form-factor guesses such as `platformSurface`; the path must be justified by capability proof. If external research is required and the selected path is `blocked` or only `local_only` without a valid skip reason, Conductor pauses before Thinking/Execution and surfaces the blocker or user-fallback choice.
+
+Conductor must also brief the evidence owner with the Deep Research Requirement: define the questions to answer, inspect enough source categories for the domain, cross-check material claims, record contradictions and assumptions, and map every material finding to a candidate option, user question, risk, or rejected path. A list of links without decision impact is not acceptable evidence for orchestration.
+
+**preDecisionOptionFrame** (candidate orchestration only):
+
+- `candidateOptions`
+- `recommendedDefault`
+- `requiresUserChoice`
+- `nativeChoiceSurface`
+- `choiceGateSkip`
+- `reviewOwner`
 
 **fetchPacket** (explicit Fetch-stage evidence):
 
@@ -163,7 +195,7 @@ For every non-query run, execution also requires a **`fetchPacket`** and a **`di
 - `graphSources`
 - `knowledgeSources`
 
-**dispatchEnvelopePacket**:
+**dispatchEnvelopePacket** (finalized only after user choice or valid recorded skip):
 
 - `ownerAgent`
 - `taskRef`
@@ -177,7 +209,7 @@ For every non-query run, execution also requires a **`fetchPacket`** and a **`di
 - `reviewOwner`
 - `verificationOwner`
 
-Rule: Conductor deals both packets **before** dispatch. No fetch evidence or envelope, no execution.
+Rule: Conductor validates evidence lanes, builds the pre-decision option frame, waits for user choice unless skip is allowed (`trivial`, pure read-only/queryBypass, or explicit auto-proceed), then finalizes the dispatch envelope. No evidence packet, option frame, or post-choice envelope means no execution.
 
 ### B. Standard Task Board Fields
 

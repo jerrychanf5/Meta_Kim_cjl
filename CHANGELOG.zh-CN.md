@@ -6,6 +6,22 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.0.39] - 2026-05-20
+
+### 新增
+
+- **研究能力预检** — `contentEvidencePacket` 现在要求 `researchCapabilityDiscovery`，证据 owner 必须先证明当前 runtime 实际可用的检索能力，再进入深度研究或用户选项框架。
+- **Run artifact 研究发现校验** — `validate-run-artifact` 现在会校验研究能力预检，并拒绝缺少发现证据的 artifact。
+
+### 变更
+
+- **基于能力证据的研究路由** — Conductor、Artisan、Scout、Prism 现在按实际检索能力（`web_search`、`url_fetch`、`docs_lookup`、MCP/plugin/search/用户提供来源）路由研究，而不是按宿主外形猜测。
+- **运行时研究 fixtures** — 有效和无效 run artifact 现在都包含明确的检索能力发现证据。
+
+### 修复
+
+- **platformSurface 漂移** — 明确拒绝 `platformSurface` 作为研究能力信号，避免用 `desktop/cli/web/ide` 这类猜测驱动跨运行时搜索决策。
+
 ## [2.0.38] - 2026-05-20
 
 ### 新增

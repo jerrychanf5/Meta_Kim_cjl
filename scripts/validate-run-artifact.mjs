@@ -377,6 +377,135 @@ function validateFetchPacket(contract, artifact) {
   }
 }
 
+function validateContentEvidencePacket(contract, artifact) {
+  const packet = artifact.contentEvidencePacket;
+  const policy = contract.protocols.contentEvidencePacket;
+  ensureFields(packet, policy.requiredFields, "contentEvidencePacket");
+  ensureEnum(
+    packet.evidenceScope,
+    policy.evidenceScopeEnum,
+    "contentEvidencePacket.evidenceScope",
+  );
+  ensureEnum(
+    packet.researchSkipReason,
+    policy.researchSkipReasonEnum,
+    "contentEvidencePacket.researchSkipReason",
+  );
+  ensureString(
+    packet.evidenceLaneValidatedBy,
+    "contentEvidencePacket.evidenceLaneValidatedBy",
+  );
+
+  const discovery = packet.researchCapabilityDiscovery;
+  const discoveryPolicy = policy.researchCapabilityDiscovery;
+  ensureFields(
+    discovery,
+    discoveryPolicy.requiredFields,
+    "contentEvidencePacket.researchCapabilityDiscovery",
+  );
+
+  for (const field of discoveryPolicy.forbiddenFields ?? []) {
+    ensure(
+      !(field in discovery),
+      `contentEvidencePacket.researchCapabilityDiscovery must not include forbidden field "${field}".`,
+    );
+  }
+
+  ensureStringArray(
+    discovery.requiredCapabilities,
+    "contentEvidencePacket.researchCapabilityDiscovery.requiredCapabilities",
+  );
+  ensureFields(
+    discovery.runtimeContext,
+    discoveryPolicy.runtimeContextRequiredFields,
+    "contentEvidencePacket.researchCapabilityDiscovery.runtimeContext",
+  );
+  ensureString(
+    discovery.runtimeContext.os,
+    "contentEvidencePacket.researchCapabilityDiscovery.runtimeContext.os",
+  );
+  ensureString(
+    discovery.runtimeContext.runtimeFamily,
+    "contentEvidencePacket.researchCapabilityDiscovery.runtimeContext.runtimeFamily",
+  );
+
+  ensureArray(
+    discovery.toolInventorySources,
+    "contentEvidencePacket.researchCapabilityDiscovery.toolInventorySources",
+  );
+  for (const [index, source] of discovery.toolInventorySources.entries()) {
+    ensureEnum(
+      source,
+      discoveryPolicy.toolInventorySourceEnum,
+      `contentEvidencePacket.researchCapabilityDiscovery.toolInventorySources[${index}]`,
+    );
+  }
+
+  ensureArray(
+    discovery.availableRetrievalCapabilities,
+    "contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities",
+  );
+  for (const [index, capability] of discovery.availableRetrievalCapabilities.entries()) {
+    ensureObject(
+      capability,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}]`,
+    );
+    ensureEnum(
+      capability.capability,
+      discoveryPolicy.retrievalCapabilityEnum,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}].capability`,
+    );
+    ensureEnum(
+      capability.providerKind,
+      discoveryPolicy.providerKindEnum,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}].providerKind`,
+    );
+    ensureEnum(
+      capability.status,
+      discoveryPolicy.statusEnum,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}].status`,
+    );
+    ensureString(
+      capability.proof,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}].proof`,
+    );
+    ensureStringArray(
+      capability.limitations,
+      `contentEvidencePacket.researchCapabilityDiscovery.availableRetrievalCapabilities[${index}].limitations`,
+    );
+  }
+
+  ensureFields(
+    discovery.selectedResearchPath,
+    ["mode", "reason"],
+    "contentEvidencePacket.researchCapabilityDiscovery.selectedResearchPath",
+  );
+  ensureEnum(
+    discovery.selectedResearchPath.mode,
+    discoveryPolicy.selectedResearchPathModeEnum,
+    "contentEvidencePacket.researchCapabilityDiscovery.selectedResearchPath.mode",
+  );
+  ensureString(
+    discovery.selectedResearchPath.reason,
+    "contentEvidencePacket.researchCapabilityDiscovery.selectedResearchPath.reason",
+  );
+
+  ensureArray(
+    discovery.capabilityGaps,
+    "contentEvidencePacket.researchCapabilityDiscovery.capabilityGaps",
+  );
+  for (const [index, gap] of discovery.capabilityGaps.entries()) {
+    ensureObject(gap, `contentEvidencePacket.researchCapabilityDiscovery.capabilityGaps[${index}]`);
+    ensureString(gap.gap, `contentEvidencePacket.researchCapabilityDiscovery.capabilityGaps[${index}].gap`);
+    ensureString(gap.impact, `contentEvidencePacket.researchCapabilityDiscovery.capabilityGaps[${index}].impact`);
+    ensureString(gap.handoff, `contentEvidencePacket.researchCapabilityDiscovery.capabilityGaps[${index}].handoff`);
+  }
+  ensureString(
+    discovery.validatedBy,
+    "contentEvidencePacket.researchCapabilityDiscovery.validatedBy",
+  );
+}
+
 function validateIntentPacketWhenRequired(contract, artifact) {
   const when =
     contract.runDiscipline.protocolFirst
@@ -1810,6 +1939,7 @@ export function validateArtifact(contract, artifact) {
   );
   validateTaskClassification(contract, artifact.taskClassification);
   validateFetchPacket(contract, artifact);
+  validateContentEvidencePacket(contract, artifact);
   validateIntentPacketWhenRequired(contract, artifact);
   validateIntentGatePacketWhenRequired(contract, artifact);
   validateCardPlan(contract, artifact);

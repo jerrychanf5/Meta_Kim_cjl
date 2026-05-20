@@ -6,6 +6,22 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.0.39] - 2026-05-20
+
+### Added
+
+- **Research capability preflight** — `contentEvidencePacket` now requires `researchCapabilityDiscovery` so evidence owners must prove current-runtime retrieval capabilities before deep research or user-facing option framing.
+- **Run artifact validation for research discovery** — `validate-run-artifact` now validates the research capability preflight and rejects missing discovery evidence.
+
+### Changed
+
+- **Capability-proof research routing** — Conductor, Artisan, Scout, and Prism now route research from observed retrieval capabilities (`web_search`, `url_fetch`, `docs_lookup`, MCP/plugin/search/user-supplied sources) instead of host form-factor assumptions.
+- **Runtime research fixtures** — Valid and invalid run artifacts now include explicit retrieval capability discovery evidence.
+
+### Fixed
+
+- **Platform-surface drift** — `platformSurface` is explicitly rejected as a research capability signal, preventing `desktop/cli/web/ide` guesses from driving cross-runtime search decisions.
+
 ## [2.0.38] - 2026-05-20
 
 ### Added

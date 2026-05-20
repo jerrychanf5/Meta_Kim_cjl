@@ -82,6 +82,7 @@ trigger: "Agent creation, skill gaps, when an agent needs new capabilities, or w
    - **Command**: Parse `package.json` scripts
    - **Memory**: Librarian sqlite-vec recall (if installed)
    - **Knowledge Graph**: graphify auto-detect (if graph exists)
+   - **Research retrieval**: for `researchCapabilityDiscovery`, report actual current-runtime retrieval capabilities by descriptor (`web_search`, `url_fetch`, `docs_lookup`, `browser_open`, `mcp_search`, `plugin_search`, `local_only`, `user_supplied_sources`) with provider kind, status, proof, and limitations; do not infer capability from host form factor or use `platformSurface`
 3. **Coarse Filter** — Screen 10-15 candidate skills from the platform capability index
 4. **Refined Selection** — Select 5-9 skills via ROI Scoring (OC max 9, including 5 mandatory Meta-Skills)
 5. **Validate** — 3-scenario test (normal / edge / exception)
@@ -138,7 +139,7 @@ Notify: Sentinel (security impact), Genesis (SOUL.md skill reference update)
 ## Core Functions
 
 - `matchSkillsToAgent(soulProfile, platform)` -> Skill/tool loadout for **one agent identity** (post-Genesis SOUL)
-- `loadPlatformCapabilities()` -> Current platform available skills, MCP tools, commands, and subagent type index
+- `loadPlatformCapabilities()` -> Current platform available skills, MCP tools, commands, subagent type index, and descriptor-based retrieval capabilities for `researchCapabilityDiscovery`
 - `discoverCommands()` -> Parse `package.json` scripts, return available npm commands with descriptions
 - `resolveAgentDependencies(teamId)` -> Team roster
 

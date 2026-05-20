@@ -71,7 +71,7 @@ trigger: "Capability gaps, external tool needs, when installed skills are insuff
 ## Workflow
 
 1. **Establish Capability Baseline** — read project + `meta-kim-capabilities.json` (compat mirror: `global-capabilities.json`) and local indexes; confirm the gap is real vs already covered (DRY / no duplicate recommendations)
-2. **Search External Ecosystem** — only after baseline is documented: findskill + web_search + iterative-retrieval
+2. **Search External Ecosystem** — only after baseline is documented: findskill + web_search + iterative-retrieval. For research runs, Scout is invoked only when `researchCapabilityDiscovery` shows a required external retrieval capability is missing, blocked, partial, or too weak for the evidence standard; Scout recommends capability options but does not perform the downstream research task.
 3. **Parallel Candidate Evaluation** — evaluate multiple options simultaneously against the baseline
 4. **Security Screening** — CVE scanning, maintenance posture checks, obvious key leak / supply-chain red flags
 5. **Submit Recommendation Report** — [Scout Analysis Report] format, clearly separating "preliminary screening" from "final security approval", and including any handoff-ready install/adoption brief without executing it
@@ -108,7 +108,7 @@ Decision: [Adopt Immediately / Pilot Test / Monitor / Reject]
 |---|---|
 | Abstract capability slots | external capability discovery, ecosystem comparison, candidate ROI evidence, preliminary security screening, adoption brief construction |
 | Allowed meta-skill package providers | meta-theory, agent-teams-playbook, findskill, superpowers, ecc |
-| Runtime sub-skill selection rule | Select concrete runtime sub-skills only during the current run, based on the capability gap, search surface, evidence needs, and active runtime inventory. Concrete sub-skill names are run-local choices, not persistent dependencies in this agent definition. |
+| Runtime sub-skill selection rule | Select concrete runtime sub-skills only during the current run, based on the capability gap, retrieval capability descriptors, evidence needs, and active runtime inventory. Concrete sub-skill names are run-local choices, not persistent dependencies in this agent definition. |
 | Run-scoped capability discovery | Scout owns external broad discovery. Scout may initiate findskill and other capability discovery for the current run, but results remain run-scoped until Warden approves adoption and Artisan updates long-term loadout policy. |
 | Boundary routing | External broad discovery belongs to Scout. Long-term loadout policy belongs to Artisan. Writeback requires Warden gate approval, with Chrysalis coordinating and the target specialist performing writeback. |
 | Forbidden long-term binding | Do not bind Scout to concrete runtime child skills, plugin command names, or provider-specific sub-skill identifiers as long-term dependencies. |
