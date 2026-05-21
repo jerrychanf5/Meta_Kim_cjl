@@ -97,6 +97,10 @@ describe("MCP memory cross-runtime hooks", () => {
       req.on("end", () => {
         requests.push({ url: req.url, body: JSON.parse(body || "{}") });
         res.setHeader("Content-Type", "application/json");
+        if (req.url === "/api/health") {
+          res.end(JSON.stringify({ status: "healthy" }));
+          return;
+        }
         if (req.url === "/api/search") {
           res.end(
             JSON.stringify({
@@ -161,11 +165,133 @@ describe("MCP memory cross-runtime hooks", () => {
     }
   });
 
+  test("shared hook recalls recent project memory when prompt is generic", async () => {
+    const searchQueries = [];
+    const server = createServer((req, res) => {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+      req.on("end", () => {
+        res.setHeader("Content-Type", "application/json");
+        if (req.url === "/api/health") {
+          res.end(JSON.stringify({ status: "healthy" }));
+          return;
+        }
+        if (req.url === "/api/search") {
+          const parsed = JSON.parse(body || "{}");
+          searchQueries.push(parsed.query);
+          if (/MCP Memory Service/.test(parsed.query)) {
+            res.end(
+              JSON.stringify({
+                memories: [
+                  {
+                    content: `${"Opening checkpoint filler. ".repeat(30)}Buried third layer MCP Memory Service 8000 recall detail should survive excerpting.`,
+                    tags: ["codex", "meta_kim", "Meta_Kim"],
+                    metadata: { project_dir: repoRoot },
+                    similarity_score: 0.95,
+                  },
+                ],
+              }),
+            );
+            return;
+          }
+          res.end(
+            JSON.stringify({
+              memories: [
+                {
+                  content:
+                    "Claude Code 会话启动 - 2026-05-22 - 工作目录: repo - 项目: Meta_Kim",
+                  tags: ["Meta_Kim", "启动"],
+                  metadata: { project_dir: repoRoot },
+                  similarity_score: 0.9,
+                },
+              ],
+            }),
+          );
+          return;
+        }
+        if (req.url?.startsWith("/api/memories?")) {
+          res.end(
+            JSON.stringify({
+              memories: [
+                {
+                  content:
+                    "MCP Memory Service 8000 recall bug: service health is fine; fix multi-query and recent project recall.",
+                  tags: ["codex", "user-prompt", "meta_kim", "Meta_Kim"],
+                  metadata: { project_dir: repoRoot },
+                  created_at: new Date().toISOString(),
+                },
+                {
+                  content:
+                    "Claude Code 会话启动 - 2026-05-22 - 工作目录: repo - 项目: Meta_Kim",
+                  tags: ["Meta_Kim", "启动"],
+                  metadata: { project_dir: repoRoot },
+                },
+              ],
+            }),
+          );
+          return;
+        }
+        res.end(JSON.stringify({ success: true }));
+      });
+    });
+    const port = await listen(server);
+
+    try {
+      const hookPath = path.join(
+        repoRoot,
+        "canonical",
+        "runtime-assets",
+        "shared",
+        "hooks",
+        "meta-kim-memory-save.mjs",
+      );
+      const result = await spawnNode(
+        [hookPath, "--event", "user-prompt"],
+        {
+          input: JSON.stringify({
+            runtime: "codex",
+            cwd: repoRoot,
+            prompt: "继续上次 Meta_Kim 工作",
+          }),
+          env: {
+            ...process.env,
+            MCP_MEMORY_URL: `http://127.0.0.1:${port}`,
+            META_KIM_DISABLE_HOOK_DEDUPE: "1",
+          },
+        },
+      );
+
+      assert.equal(result.status, 0, result.stderr);
+      const output = JSON.parse(result.stdout);
+      assert.match(
+        output.systemMessage,
+        /MCP Memory Service 8000 recall bug/,
+      );
+      assert.match(
+        output.systemMessage,
+        /Buried third layer MCP Memory Service 8000 recall detail/,
+      );
+      assert.doesNotMatch(output.systemMessage, /Claude Code 会话启动/);
+      assert.ok(
+        searchQueries.some((query) => /current problems decisions next steps/.test(query)),
+        "expected generic project prompts to trigger broader recall queries",
+      );
+    } finally {
+      await closeServer(server);
+    }
+  });
+
   test("shared hook emits runtime-specific context envelopes", async () => {
     const server = createServer((req, res) => {
       req.resume();
       req.on("end", () => {
         res.setHeader("Content-Type", "application/json");
+        if (req.url === "/api/health") {
+          res.end(JSON.stringify({ status: "healthy" }));
+          return;
+        }
         if (req.url === "/api/search") {
           res.end(
             JSON.stringify({
@@ -261,6 +387,43 @@ describe("MCP memory cross-runtime hooks", () => {
     assert.equal(result.stdout.trim(), "");
   });
 
+  test("shared hook reports local MCP memory health instead of failing silently", () => {
+    const hookPath = path.join(
+      repoRoot,
+      "canonical",
+      "runtime-assets",
+      "shared",
+      "hooks",
+      "meta-kim-memory-save.mjs",
+    );
+    const result = spawnSync(
+      process.execPath,
+      [hookPath, "--event", "session-start"],
+      {
+        input: JSON.stringify({
+          runtime: "codex",
+          cwd: repoRoot,
+          prompt: "Load continuity for this project.",
+        }),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          MCP_MEMORY_URL: "http://127.0.0.1:9",
+          META_KIM_DISABLE_MEMORY_AUTOSTART: "1",
+          META_KIM_MEMORY_HEALTH_WARNING_INTERVAL_MS: "0",
+          META_KIM_DISABLE_HOOK_DEDUPE: "1",
+        },
+        timeout: 6000,
+      },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const output = JSON.parse(result.stdout);
+    assert.match(output.systemMessage, /Layer 3 MCP Memory Service is not healthy/);
+    assert.match(output.systemMessage, /memory server --http/);
+    assert.match(output.systemMessage, /Cross-session recall\/writeback is unavailable/);
+  });
+
   test("Claude stop memory hook writes correct memory type", () => {
     const source = readRepoFile(
       "canonical",
@@ -305,6 +468,57 @@ describe("MCP memory cross-runtime hooks", () => {
       assert.match(source, /redactSecrets/);
       assert.match(source, /\[REDACTED/);
     }
+  });
+
+  test("memory hooks self-heal local MCP service and expose health state", () => {
+    const shared = readRepoFile(
+      "canonical",
+      "runtime-assets",
+      "shared",
+      "hooks",
+      "meta-kim-memory-save.mjs",
+    );
+    const claudeSession = readRepoFile(
+      "canonical",
+      "runtime-assets",
+      "claude",
+      "memory-hooks",
+      "mcp_memory_global.py",
+    );
+    const claudeStop = readRepoFile(
+      "canonical",
+      "runtime-assets",
+      "claude",
+      "hooks",
+      "stop-memory-save.mjs",
+    );
+    const openclaw = readRepoFile(
+      "canonical",
+      "runtime-assets",
+      "openclaw",
+      "hooks",
+      "mcp-memory-service",
+      "handler.ts",
+    );
+
+    for (const source of [shared, claudeStop, openclaw]) {
+      assert.match(source, /\/api\/health/);
+      assert.match(source, /memory.*server.*--http/s);
+      assert.match(source, /META_KIM_DISABLE_MEMORY_AUTOSTART/);
+      assert.match(source, /HF_HUB_OFFLINE/);
+      assert.match(source, /TRANSFORMERS_OFFLINE/);
+    }
+
+    assert.match(claudeSession, /ensure_service_health/);
+    assert.match(claudeSession, /memory_bin.*server.*--http/s);
+    assert.match(claudeSession, /META_KIM_DISABLE_MEMORY_AUTOSTART/);
+    assert.match(shared, /Layer 3 MCP Memory Service is not healthy/);
+    assert.match(claudeSession, /Layer 3 MCP Memory Service is not healthy/);
+    assert.match(shared, /buildRecallQueries/);
+    assert.match(shared, /recentMemories/);
+    assert.match(shared, /current problems decisions next steps/);
+    assert.match(claudeSession, /load_recent_project_memories/);
+    assert.match(claudeSession, /current problems decisions next steps/);
   });
 
   test("Claude stop compaction keeps open findings as local continuity, not Evolution memory writeback", () => {

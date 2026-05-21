@@ -6,6 +6,25 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.0.42] - 2026-05-22
+
+### 新增
+
+- **中文完整架构图** — 新增中文为主的详细架构文档，覆盖 canonical 源、运行时投影、8 阶段主干、11 阶段业务流、隐藏治理包、三层记忆、Graphify、安装/更新流程和各运行时能力边界。
+- **MCP 记忆召回回归测试** — 新增 setup 测试，确保泛提示也能召回最近的高信号项目记忆，并覆盖长 checkpoint 中被埋住的 MCP Memory Service 细节。
+
+### 变更
+
+- **第三层记忆召回策略** — Codex、Cursor、OpenClaw 和 Claude hooks 现在使用多路查询、最近项目兜底、高信号记忆优先、主题级去重和关键词居中摘录，不再只依赖一次项目名搜索。
+- **MCP 记忆健康处理** — Runtime hooks 现在会检查 `/api/health`，在本地端点安全时尝试后台启动 `memory server --http`，失败时注入节流状态提示，避免跨会话召回静默失效。
+- **近期修复汇总** — 本版本汇总近期已推送修复：Codex request-user-input 默认启用、Codex warning suppression、跨运行时 memory hook 输出、meta-theory choice surface、Claude 插件 skill 残留清理，以及 Graphify 使用说明。
+
+### 修复
+
+- **服务健康但召回弱** — 修复 `http://localhost:8000` 健康时，agent 仍然只有在 prompt 明确写端口或 MCP Memory Service 才能想起第三层记忆的问题。
+- **长 checkpoint 截断** — 召回内容现在围绕 `8000`、`MCP Memory Service`、`third layer`、跨会话召回等高信号词摘录，不再只截取开头。
+- **重复 checkpoint 噪声** — stop/session checkpoint 会按主题级去重，避免旧的重复 MCP 启动记录淹没当前项目记忆。
+
 ## [2.0.41] - 2026-05-21
 
 ### 修复
