@@ -396,6 +396,16 @@
         "linearFormat": "sequential_questions",
         "parallelFormat": "batch_list",
         "description": "When multiple independent questions exist, collect and present them in one interaction"
+      },
+      "codexVisibleMultiOptionOutput": {
+        "required": true,
+        "minimumOptions": 2,
+        "appliesTo": "every_user_visible_codex_meta_theory_output",
+        "requiredLabel": "Multi-Option Snapshot",
+        "requiresRecommendedDefault": true,
+        "requiresRejectedAlternativeWhenOnlyOnePracticalPathExists": true,
+        "claudeNativeChoiceSurfaceUnchanged": true,
+        "description": "Codex meta-theory delivery must show a short visible multi-option snapshot on every user-visible output. This is a Codex presentation rule and does not replace preDecisionOptionFrame, formal confirmation gates, or Claude Code native AskUserQuestion behavior."
       }
     },
     "controlIntervention": {

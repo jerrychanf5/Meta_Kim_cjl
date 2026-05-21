@@ -37,6 +37,32 @@ When running inside Codex, this skill is an execution protocol, not just a discu
 - Keep main Codex thread limited to clarification, routing, verification, and synthesis
 - If `agent-teams-playbook` cannot load or `spawn_agent` is unavailable, record the blocked reason and follow the degraded path — do not silently continue as main-thread analysis
 
+### Codex Multi-Option Output Rule
+
+Every user-visible Codex output produced under this skill must include a **Multi-Option Snapshot**. This is a Codex delivery rule, not a replacement for the Thinking-stage `preDecisionOptionFrame` or the formal confirmation gate.
+
+The snapshot must be short and must show at least two viable options whenever the output is visible to the user, including status updates, preflight notes, confirmation cards, degraded-path notices, review summaries, verification summaries, and final answers.
+
+Required shape:
+
+```text
+Multi-Option Snapshot:
+- Option A: [plain-language path]. Result: [what the user gets]. Trade-off: [main cost or risk].
+- Option B: [plain-language path]. Result: [what the user gets]. Trade-off: [main cost or risk].
+- Default: [chosen or recommended path] because [evidence-based reason].
+```
+
+If only one practical path exists, still show the rejected alternative so the user can see the decision boundary:
+
+```text
+Multi-Option Snapshot:
+- Option A: [practical path]. Result: [what the user gets]. Trade-off: [main cost or risk].
+- Option B: [rejected path]. Result: [what would happen]. Trade-off: Rejected because [specific reason].
+- Default: Option A because [specific reason].
+```
+
+This Codex rule does not alter Claude Code behavior. Claude Code native question tool remains unchanged: when available, it remains the primary surface for blocking clarification and execution confirmation.
+
 **Read-only is still delegable.** Phrases like `仅分析`, `只读`, `analysis only` restrict writes but do not revoke `/meta-theory` authorization for agent dispatch. Only skip subagents when the user explicitly says `不要调用 agent`, `no subagents`, or equivalent.
 
 ## Architecture Type Pre-judgment

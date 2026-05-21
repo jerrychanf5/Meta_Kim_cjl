@@ -213,6 +213,23 @@ describe("Clarity Gate unified execution confirmation", async () => {
     assert.match(codexPolicyText, /localized confirmation card/i);
     assert.match(codexPolicyText, /native choice.*exposes it|native.*unavailable/i);
   });
+
+  test("Codex meta-theory outputs always include a visible multi-option snapshot", () => {
+    assert.match(skillContent, /Codex Multi-Option Output Rule/);
+    assert.match(skillContent, /Every user-visible Codex output/s);
+    assert.match(skillContent, /Multi-Option Snapshot/);
+    assert.match(skillContent, /at least two viable options/i);
+    assert.match(skillContent, /Claude Code native question tool remains unchanged/i);
+
+    const codexPolicy =
+      workflowContractJson.runDiscipline?.userInteractionPolicy
+        ?.codexVisibleMultiOptionOutput;
+    assert.ok(codexPolicy, "workflow contract must define Codex visible multi-option policy");
+    assert.equal(codexPolicy.required, true);
+    assert.equal(codexPolicy.minimumOptions, 2);
+    assert.equal(codexPolicy.appliesTo, "every_user_visible_codex_meta_theory_output");
+    assert.equal(codexPolicy.claudeNativeChoiceSurfaceUnchanged, true);
+  });
 });
 
 describe("Clarity Gate scenario JSON remains valid", async () => {

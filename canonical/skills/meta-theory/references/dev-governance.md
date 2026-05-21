@@ -183,6 +183,8 @@ Stage names remain canonical English protocol labels (`Critical`, `Fetch`, `Thin
 
 **Non-trivial execution rule**: For non-trivial executable work, Decision is the default after Fetch and pre-decision Thinking unless the user explicitly chose auto-proceed, the task is trivial, or `queryBypass: true` applies. Skips must be recorded as `choiceGateSkip`; silent skips fail Review.
 
+**Codex visible multi-option output rule**: In Codex, every user-visible `meta-theory` output must include a short `Multi-Option Snapshot` with at least two options and a recommended default. This applies to Notices as well as Decisions. It is a presentation rule only: it does not turn every Notice into a popup, does not override `queryBypass`, and does not replace `preDecisionOptionFrame` or the formal Decision gate. If only one practical path exists, include the rejected alternative and the reason it was rejected. Claude Code native question tool behavior remains unchanged.
+
 **Decision Triggers** (from `config/contracts/workflow-contract.json` → `userInteractionPolicy`):
 
 1. `non_trivial_executable_decision`: executable work is not trivial and no explicit auto-proceed exists
