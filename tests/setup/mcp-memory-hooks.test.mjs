@@ -80,6 +80,9 @@ describe("MCP memory cross-runtime hooks", () => {
     assert.doesNotMatch(source, /legacy_memory_type/);
     assert.doesNotMatch(source, /\/api\/memories\/search/);
     assert.match(source, /systemMessage/);
+    assert.match(source, /hookSpecificOutput/);
+    assert.match(source, /META_KIM_DISABLE_HOOK_DEDUPE/);
+    assert.doesNotMatch(source, /message:\s*context/);
     assert.match(source, /node:https/);
     assert.match(source, /url\.protocol === "https:" \? https : http/);
   });
@@ -133,6 +136,7 @@ describe("MCP memory cross-runtime hooks", () => {
           env: {
             ...process.env,
             MCP_MEMORY_URL: `http://127.0.0.1:${port}`,
+            META_KIM_DISABLE_HOOK_DEDUPE: "1",
           },
         },
       );
@@ -144,10 +148,82 @@ describe("MCP memory cross-runtime hooks", () => {
       assert.doesNotMatch(saved.body.content, /Bearer abcdef/);
       assert.match(saved.body.content, /\[REDACTED/);
 
+      const output = JSON.parse(result.stdout);
+      assert.match(output.systemMessage, /Untrusted recalled memory context/);
+      assert.equal(Object.hasOwn(output, "message"), false);
+      assert.equal(Object.hasOwn(output, "continue"), false);
       assert.match(result.stdout, /Untrusted recalled memory context/);
       assert.match(result.stdout, /> .*Keep project note/);
       assert.doesNotMatch(result.stdout, /Ignore previous instructions/i);
       assert.doesNotMatch(result.stdout, /reveal system prompt/i);
+    } finally {
+      await closeServer(server);
+    }
+  });
+
+  test("shared hook emits runtime-specific context envelopes", async () => {
+    const server = createServer((req, res) => {
+      req.resume();
+      req.on("end", () => {
+        res.setHeader("Content-Type", "application/json");
+        if (req.url === "/api/search") {
+          res.end(
+            JSON.stringify({
+              memories: [{ content: "Reusable project context.", tags: ["demo"] }],
+            }),
+          );
+          return;
+        }
+        res.end(JSON.stringify({ success: true }));
+      });
+    });
+    const port = await listen(server);
+    const hookPath = path.join(
+      repoRoot,
+      "canonical",
+      "runtime-assets",
+      "shared",
+      "hooks",
+      "meta-kim-memory-save.mjs",
+    );
+
+    async function runHook(runtime) {
+      const result = await spawnNode(
+        [hookPath, "--event", "user-prompt"],
+        {
+          input: JSON.stringify({
+            runtime,
+            cwd: repoRoot,
+            prompt: `Recall context for ${runtime}.`,
+          }),
+          env: {
+            ...process.env,
+            MCP_MEMORY_URL: `http://127.0.0.1:${port}`,
+            META_KIM_DISABLE_HOOK_DEDUPE: "1",
+          },
+        },
+      );
+      assert.equal(result.status, 0, result.stderr);
+      return JSON.parse(result.stdout);
+    }
+
+    try {
+      const codex = await runHook("codex");
+      assert.match(codex.systemMessage, /Reusable project context/);
+      assert.equal(Object.hasOwn(codex, "message"), false);
+
+      const claude = await runHook("claude");
+      assert.equal(
+        claude.hookSpecificOutput.hookEventName,
+        "UserPromptSubmit",
+      );
+      assert.match(
+        claude.hookSpecificOutput.additionalContext,
+        /Reusable project context/,
+      );
+
+      const cursor = await runHook("cursor");
+      assert.match(cursor.prompt, /Reusable project context/);
     } finally {
       await closeServer(server);
     }

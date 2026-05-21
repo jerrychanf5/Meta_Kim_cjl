@@ -13,7 +13,8 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import os from "node:os";
@@ -23,6 +24,7 @@ import process from "node:process";
 const TIMEOUT_MS = 4000;
 const MAX_TEXT = 3000;
 const MAX_MEMORY_CONTEXT = 1200;
+const DEDUPE_WINDOW_MS = 10000;
 const REMOTE_MEMORY_ALLOWED = process.env.META_KIM_ALLOW_REMOTE_MEMORY === "1";
 const SECRET_PATTERNS = [
   /\bsk-(?:proj|live|test)?-[A-Za-z0-9_-]{10,}\b/gu,
@@ -268,6 +270,40 @@ function promptFromPayload(payload) {
   return "";
 }
 
+function stableHookId(payload, runtime, cwd, event, prompt) {
+  const material = JSON.stringify({
+    runtime,
+    event,
+    cwd,
+    session_id:
+      payload.session_id ||
+      payload.sessionId ||
+      payload.conversation_id ||
+      payload.conversationId ||
+      "",
+    turn_id: payload.turn_id || payload.turnId || "",
+    prompt: prompt ? prompt.slice(0, 1000) : "",
+  });
+  return createHash("sha256").update(material).digest("hex");
+}
+
+function shouldSkipDuplicate(payload, runtime, cwd, event, prompt) {
+  if (process.env.META_KIM_DISABLE_HOOK_DEDUPE === "1") return false;
+  try {
+    const dir = path.join(os.tmpdir(), "meta-kim-hook-dedupe");
+    mkdirSync(dir, { recursive: true });
+    const markerPath = path.join(dir, `${stableHookId(payload, runtime, cwd, event, prompt)}.json`);
+    if (existsSync(markerPath)) {
+      const ageMs = Date.now() - statSync(markerPath).mtimeMs;
+      if (ageMs >= 0 && ageMs < DEDUPE_WINDOW_MS) return true;
+    }
+    writeFileSync(markerPath, JSON.stringify({ runtime, event, cwd, time: Date.now() }), "utf8");
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 function gitStatus(cwd) {
   const result = spawnSync("git", ["status", "--short"], {
     cwd,
@@ -432,12 +468,26 @@ function formatMemoryContext(memories, runtime, event) {
     : context;
 }
 
-function emitRuntimeContext(context) {
-  const payload = {
-    systemMessage: context,
-    message: context,
-    continue: true,
-  };
+function hookEventName(event) {
+  if (event === "session-start") return "SessionStart";
+  if (event === "user-prompt") return "UserPromptSubmit";
+  return event;
+}
+
+function emitRuntimeContext(context, runtime, event) {
+  let payload;
+  if (runtime === "claude") {
+    payload = {
+      hookSpecificOutput: {
+        hookEventName: hookEventName(event),
+        additionalContext: context,
+      },
+    };
+  } else if (runtime === "cursor") {
+    payload = { prompt: context };
+  } else {
+    payload = { systemMessage: context };
+  }
   process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
@@ -449,6 +499,9 @@ async function main() {
   const event = detectEvent(payload);
   const endpoint = getEndpoint();
   const project = projectName(cwd);
+  const query = promptFromPayload(payload) || project;
+
+  if (shouldSkipDuplicate(payload, runtime, cwd, event, query)) return;
 
   const content = buildContent(payload, runtime, cwd, event);
   if (content.length >= 40) {
@@ -477,10 +530,9 @@ async function main() {
 
   if (event === "stop") return;
 
-  const query = promptFromPayload(payload) || project;
   const memories = await searchMemories(endpoint, query, project);
   const context = formatMemoryContext(memories, runtime, event);
-  if (context) emitRuntimeContext(context);
+  if (context) emitRuntimeContext(context, runtime, event);
 }
 
 main().catch(() => {});
