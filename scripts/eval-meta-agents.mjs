@@ -1272,10 +1272,18 @@ async function runClaudeDiscovery(agentIds) {
       },
     ));
   } catch (error) {
-    if (String(error.message).includes("'claude agents' is not available")) {
+    const message = String(error.message);
+    if (message.includes("'claude agents' is not available")) {
       return discoverFromProjectFiles({
         cliSupportsAgentsCommand: true,
         fallbackReason: "claude-agents-command-unavailable",
+        fallbackError: error.message,
+      });
+    }
+    if (message.includes("requires an interactive terminal")) {
+      return discoverFromProjectFiles({
+        cliSupportsAgentsCommand: true,
+        fallbackReason: "claude-agents-command-non-tty",
         fallbackError: error.message,
       });
     }

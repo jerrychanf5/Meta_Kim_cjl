@@ -334,8 +334,8 @@
       "codex": {
         "primarySurface": "native_choice",
         "fallbackSurfaces": ["conversation_fallback"],
-        "triggerDescription": "Use Codex native choice input when the active runtime mode exposes it; otherwise pause with a localized confirmation card.",
-        "implementation": "Emit markdown confirmation card; depends on active mode availability."
+        "triggerDescription": "Use Codex native choice only when a real host-provided choice tool is exposed to the agent; otherwise pause with a localized confirmation card. Codex CLI/exec and repository hook adapters must not claim a popup.",
+        "implementation": "Invoke the host-provided choice tool only when available; otherwise emit a localized markdown confirmation card, record conversation_fallback, and state that it is a chat card rather than a popup."
       },
       "openclaw": {
         "primarySurface": "workspace_agent",
@@ -402,10 +402,13 @@
         "minimumOptions": 2,
         "appliesTo": "every_user_visible_codex_meta_theory_output",
         "requiredLabel": "Multi-Option Snapshot",
+        "languagePolicy": "latest_user_language",
+        "protocolIdentifiersRemainCanonical": true,
         "requiresRecommendedDefault": true,
         "requiresRejectedAlternativeWhenOnlyOnePracticalPathExists": true,
+        "fallbackMustDeclareNotPopup": true,
         "claudeNativeChoiceSurfaceUnchanged": true,
-        "description": "Codex meta-theory delivery must show a short visible multi-option snapshot on every user-visible output. This is a Codex presentation rule and does not replace preDecisionOptionFrame, formal confirmation gates, or Claude Code native AskUserQuestion behavior."
+        "description": "Codex meta-theory delivery must show a short visible multi-option snapshot on every user-visible output, written in the user's latest language while keeping protocol identifiers canonical. This is a Codex presentation rule and does not replace preDecisionOptionFrame, formal confirmation gates, or Claude Code native AskUserQuestion behavior. When Codex falls back to conversation_fallback, it must be described as a chat card rather than a popup."
       }
     },
     "controlIntervention": {

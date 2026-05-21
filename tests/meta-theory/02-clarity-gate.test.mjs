@@ -211,7 +211,9 @@ describe("Clarity Gate unified execution confirmation", async () => {
     const codexPolicyText = `${codexSurface.triggerDescription} ${codexSurface.implementation}`;
     assert.match(codexPolicyText, /pause/i);
     assert.match(codexPolicyText, /localized confirmation card/i);
-    assert.match(codexPolicyText, /native choice.*exposes it|native.*unavailable/i);
+    assert.match(codexPolicyText, /host-provided choice tool/i);
+    assert.match(codexPolicyText, /CLI\/exec|hook adapters/i);
+    assert.match(codexPolicyText, /chat card.*popup|popup.*chat card/i);
   });
 
   test("Codex meta-theory outputs always include a visible multi-option snapshot", () => {
@@ -219,6 +221,11 @@ describe("Clarity Gate unified execution confirmation", async () => {
     assert.match(skillContent, /Every user-visible Codex output/s);
     assert.match(skillContent, /Multi-Option Snapshot/);
     assert.match(skillContent, /at least two viable options/i);
+    assert.match(skillContent, /user's latest language/i);
+    assert.match(skillContent, /Option A.*placeholders|placeholders.*Option A/s);
+    assert.match(skillContent, /方案 A/);
+    assert.match(skillContent, /conversation_fallback.*chat card/i);
+    assert.match(skillContent, /not a popup/i);
     assert.match(skillContent, /Claude Code native question tool remains unchanged/i);
 
     const codexPolicy =
@@ -228,6 +235,9 @@ describe("Clarity Gate unified execution confirmation", async () => {
     assert.equal(codexPolicy.required, true);
     assert.equal(codexPolicy.minimumOptions, 2);
     assert.equal(codexPolicy.appliesTo, "every_user_visible_codex_meta_theory_output");
+    assert.equal(codexPolicy.languagePolicy, "latest_user_language");
+    assert.equal(codexPolicy.protocolIdentifiersRemainCanonical, true);
+    assert.equal(codexPolicy.fallbackMustDeclareNotPopup, true);
     assert.equal(codexPolicy.claudeNativeChoiceSurfaceUnchanged, true);
   });
 });

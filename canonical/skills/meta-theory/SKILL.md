@@ -43,6 +43,10 @@ Every user-visible Codex output produced under this skill must include a **Multi
 
 The snapshot must be short and must show at least two viable options whenever the output is visible to the user, including status updates, preflight notes, confirmation cards, degraded-path notices, review summaries, verification summaries, and final answers.
 
+The snapshot is user-facing text. It must follow the user's latest language or explicit language preference. Keep only protocol identifiers such as `Critical`, `Fetch`, `Thinking`, `Execution`, `nativeChoiceSurface`, and `conversation_fallback` in their canonical form. Example labels such as `Option A` are placeholders; localize them in the actual response, for example `方案 A` for Chinese.
+
+Do not describe a Codex fallback card as a popup. In Codex, `conversation_fallback` means a chat card in the conversation. Call it a native popup only when a real Codex host-provided choice tool is available and has actually been invoked.
+
 Required shape:
 
 ```text
@@ -157,14 +161,14 @@ For `clarify`, `option_select`, and `confirm_execution` cards, prefer the curren
 | Runtime | Primary native surface | Fallback | Implementation |
 |---------|----------------------|----------|----------------|
 | Claude Code | native question tool | conversation_fallback | **✅ FULLY SUPPORTED** - Use native question tool directly |
-| Codex | native choice input | conversation_fallback | ⚠️ Depends on active mode; use conversation card as fallback |
+| Codex | host-provided native choice tool when exposed | conversation_fallback | ⚠️ Only native when the active Codex host exposes a real choice tool; Codex CLI/exec and hook adapters use a conversation card |
 | OpenClaw | workspace agent mechanism | conversation_fallback | ⚠️ Requires proper workspace config; use conversation card |
 | Cursor | Custom Modes / mode picker | conversation_fallback | ⚠️ Runtime-dependent; use conversation card as fallback |
 
 **Platform-Specific Implementation**:
 
 1. **Claude Code**: Use the native question tool directly - this is the guaranteed path
-2. **Codex/OpenClaw/Cursor**: Emit a formatted conversation card and wait for user response
+2. **Codex/OpenClaw/Cursor**: Use a real native surface only when the active host exposes one; otherwise emit a formatted conversation card and wait for user response
 
 **Claude Code Implementation (PRIMARY)**:
 ```
@@ -184,6 +188,7 @@ When native surface is unavailable:
     - Approach: [handling approach description]
     - Please respond: Confirm / Modify / Cancel
   → Record: nativeChoiceSurface = "conversation_fallback"
+  → State clearly: this is a chat confirmation card, not a popup
   → Wait for explicit user selection
 ```
 
