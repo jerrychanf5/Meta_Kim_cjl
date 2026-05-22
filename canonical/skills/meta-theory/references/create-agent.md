@@ -120,6 +120,15 @@ Required fields:
 
 This card is the build contract for an execution-agent factory when an agent must be created or upgraded. It is not used just because a global agent exists; direct global reuse remains a reference, not a local copy. A copied global agent must be modified or upgraded after copy; otherwise it should stay global.
 
+### Sub-agent Identity Carry-over
+
+When the orchestrator dispatches a meta-* agent as a sub-agent (e.g., `Agent(subagent_type: "meta-prism", ...)`):
+- The sub-agent's runtime identity remains "meta-*"
+- All meta-* tool restrictions and behavioral rules continue to apply
+- The sub-agent must use Read-only + Agent tools for its own work
+- If the sub-agent's task requires execution (code edits, builds, installs), it must transitively dispatch to a non-governance executor
+- This carry-over rule is enforced by both: (a) prompt-layer self-check in SKILL.md, and (b) hook-layer caller identity check in `enforce-agent-dispatch.mjs`
+
 ### Skill Binding Rules For Created Or Iterated Agents
 
 Created or upgraded agents inherit durable capability shape, not a frozen tactic list.

@@ -6,6 +6,34 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.1.0] - 2026-05-23
+
+### 新增
+
+- **Sub-agent 治理元边界** — meta-theory 的 `Dispatch-Not-Execute` 规则正式延伸到 sub-agent 上下文。`canonical/skills/meta-theory/SKILL.md` 新增第 6 条：禁止 meta-* sub-agent 执行业务逻辑（Fetch 只返回证据；Thinking 只产出 plan；Review 只验证不打补丁；Execution 编排者只 dispatch 不写代码）。`references/dev-governance.md` 列出 meta-prism 允许/禁止矩阵；`references/create-agent.md` 新增 `Sub-agent Identity Carry-over` 章节，写明 prompt + hook 双层 enforcement。
+- **9 份治理 agent 的 frontmatter 工具白名单** — 所有 `canonical/agents/meta-*.md` 现在统一声明 `tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch`。`Edit`、`Write`、`MultiEdit`、`NotebookEdit`、MCP 写类工具被刻意排除，Claude Code 原生即对治理 agent 屏蔽这些工具。
+- **L2 混合 Bash 只读白名单** — 新增 `canonical/runtime-assets/claude/hooks/bash-readonly-whitelist.mjs`：66 条只读命令白名单（如 `git status`、`git log`、`ls`、`cat`、`find`、`rg`、`pnpm typecheck`、`cargo check`）+ 60 条危险参数黑名单（如 `git push`、`--force`、`cargo build`、`npm install`、`| sh`、`; rm`）。基于 token 边界识别 `>` / `>>`；允许重定向到 `/dev/null`（Windows `nul`）和 `os.tmpdir()` 路径，拦截写入工作树；同时拦截命令替换（`$(...)`、反引号）。
+- **渐进式拦截模式** — `enforce-agent-dispatch.mjs` 暴露 `META_KIM_META_ENFORCEMENT_MODE`（`warn` | `block` | `progressive`，默认 `progressive`）和 `META_KIM_META_ENFORCEMENT_GRACE_DAYS`（默认 7）。宽限期内违规只 warn，之后转 block；测试/CI 可设 `MODE=block` 立即跳过宽限期。
+- **Cursor 声明性治理** — 新增 `canonical/runtime-assets/cursor/rules/meta-enforcement.mdc`（alwaysApply MDC 规则），在 Cursor 每轮对话注入 meta-* sub-agent 边界，弥补 Cursor 无 PreToolUse deny 能力。
+- **跨运行时能力矩阵** — 新增 `docs/cross-runtime-meta-enforcement.md`，记录 Claude Code、Codex、Cursor、OpenClaw 各自的 deny / 声明性能力差异，帮助用户按运行时管理合理预期。
+
+### 变更
+
+- **enforce-agent-dispatch.mjs 调用者识别** — `isMetaAgent()` 现在不只覆盖 Agent 工具，还覆盖 Bash、Edit、Write、MultiEdit、NotebookEdit。调用者身份推断顺序：`CLAUDE_SUBAGENT_TYPE` → 当前 stage `dispatchChain` 末项 → 之前 stage 回溯 → null（保守 warn）。原来的 `if (!state || !state.active) process.exit(0)` 逃生舱口改为最小化降级路径，仍会对 meta-* 调用者执行只读检查。
+- **spine-state.mjs 跨 OS 加固** — `isWithin()` 现在对 parent 和 target 都做 `normalize()`，Windows 平台额外 `toLowerCase()`，消除 `spine-state.json` 大小写绕过。`enforce-agent-dispatch.mjs` 的 `isSpineStateWrite()` 也加入了 `[\\/]spine[\\/]` 段匹配。
+- **版本元数据** — 包版本提升到 `2.1.0`。
+
+### 修复
+
+- **治理元 agent 直接执行** — 在此版本之前，`meta-prism` 和 `meta-conductor` 一旦被 dispatch 成 sub-agent，仍可自由调用 `Bash`、`Edit`、`Write`，因为：(a) meta-theory prompt 只约束主线程；(b) `canonical/agents/meta-*.md` 没有 `tools:` frontmatter；(c) `enforce-agent-dispatch.mjs` 对执行工具不检查调用者身份；(d) spine state 失活时 hook 直接 exit；(e) Codex / Cursor / OpenClaw 完全没有 PreToolUse hook。本次的路径 C 在 Claude Code 上机械化闭环了全部 5 层，在其他运行时上以声明性方式诚实标注覆盖度。
+- **Windows 路径绕过** — `targetPath.includes("spine-state.json")` 在 Windows 大小写变化时会失配，新归一化比较修复了这一点。
+- **重定向误伤** — 早期实现拦截所有含 `>` 的命令，会误伤 `grep ... > /dev/null` 等合法只读取证；新的 token 边界 + 目标白名单恢复了这些合法流程。
+
+### 已知限制
+
+- Codex 和 OpenClaw 仍只能依靠声明性 `executionBlock=true` + prompt 自律，因为两者都没有 PreToolUse deny 通道；这一限制在 `docs/cross-runtime-meta-enforcement.md` 中明文记录，不通过假 hook 粉饰。
+- `npm run meta:sync` 目前未投影 `canonical/runtime-assets/cursor/rules/`；该文件目前手动复制到 `.cursor/rules/`，等 sync 脚本扩展支持后会自动化。
+
 ## [2.0.44] - 2026-05-23
 
 ### 新增

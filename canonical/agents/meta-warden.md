@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-warden
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Coordinate the Meta_Kim agent team, quality gates, and final synthesis across the other meta agents.
 type: agent
 subagent_type: general-purpose

@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-scout
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Discover external tools and skills to close Meta_Kim capability gaps.
 type: agent
 subagent_type: general-purpose

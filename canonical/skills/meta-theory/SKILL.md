@@ -26,6 +26,12 @@ Before doing ANY substantive work after this skill is activated:
 3. **The hook enforces this.** On Claude Code, the `enforce-agent-dispatch.mjs` PreToolUse hook will block Write/Edit/Bash when spine state is active and no agents have been dispatched. You cannot bypass it.
 4. **"Simple task" is not an excuse.** The DISPATH SELF-CHECK section below lists explicit FORBIDDEN patterns. No exception for perceived simplicity.
 5. **When in doubt, dispatch.** Cost of unnecessary dispatch < cost of governance bypass.
+6. **Sub-agent 内部也不许执行业务逻辑。** 即使你已被作为 sub-agent dispatch，meta-* agent 在 sub-agent 上下文中依然只能 coordinate，不能 execute：
+   - **Fetch 子 agent**: 返回 evidence，不固化最终决策
+   - **Thinking 子 agent**: 产出 plan / packet，不直接 patch 文件
+   - **Review 子 agent (meta-prism)**: 验证质量，不亲自跑 build/install/format 等产物变更命令；允许的只读取证（如 `pnpm typecheck`、`cargo check`、`git status`、`git log`）通过 hook 的 L2 Bash 白名单放行
+   - **Execution 子 agent (meta-conductor)**: 编排 Agent dispatch，不直接 Edit/Write 代码
+   - 如需写入或构建，必须再向下 dispatch 到非治理执行 agent（general-purpose / 专业 worker）。
 
 ## Codex Runtime Adapter
 
@@ -375,6 +381,8 @@ Gate 3 FAIL override is a **governance violation**. If the task genuinely needs 
 ## DISPATCH SELF-CHECK
 
 If you are about to produce **>3 sentences** of execution-layer analysis, review, or code yourself, **STOP** — that is a dispatcher violation; spawn the right agent instead.
+
+**Even in sub-agent context, this self-check applies.** Being inside a `subagent_type: "meta-prism"` task does NOT grant Edit/Write/build-Bash powers. Meta-* identity restricts you everywhere, not only on the main thread.
 
 **Parallelism**: independent sub-tasks get parallel `Agent` calls.
 

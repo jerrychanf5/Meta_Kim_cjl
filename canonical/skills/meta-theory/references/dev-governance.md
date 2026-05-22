@@ -37,6 +37,8 @@ Meta_Kim distinguishes between two agent layers. **Confusing these layers is a g
 - ❌ Treating "ignored execution agents" as silently accepted owners. They must be converted to run-scoped capability evidence or rejected with `capabilityGapPacket`
 - ❌ Binding concrete skills or commands into long-term meta-agent identity instead of recording them in `matchedSkills`
 - ❌ Copying a usable global agent into a user project without modification need. Direct global reuse must stay direct.
+- "I'm a meta-* agent in sub-agent context, so I can run Bash/Edit/Write freely" — **NO**. The dispatch model restricts meta-* identity everywhere.
+- "Review needs me to run typecheck/test, that's not 'execution'" — **only via the L2 read-only Bash whitelist**. Anything that mutates the working tree is execution.
 
 **How to identify layers**:
 - Meta-agents: `id` starts with `meta-` in `config/capability-index/meta-kim-capabilities.json`, OR agent's SOUL.md has `⚠️ GOVERNANCE LAYER AGENT` warning box
@@ -1602,6 +1604,11 @@ Before content quality review begins, check the execution contract itself:
 - [ ] Did the run maintain one consolidated deliverable rather than drifting into detached outputs?
 
 If any answer is no, the Review packet must record **protocol non-compliance** even if the implementation quality looks good.
+
+**Review 阶段的 meta-prism 边界**:
+- ✅ 允许：Read / Grep / Glob / WebFetch / WebSearch / Bash (只读白名单子集，如 `pnpm typecheck`、`cargo check --no-deps`、`git status`、`git log`、`ls`、`cat`、`find`)
+- ❌ 禁止：Edit / Write / NotebookEdit / MCP-write / Bash 中包含 `install / build / push / rm / curl POST / --force / npm publish` 等副作用命令
+- 如发现质量问题需修复代码 → 必须 dispatch 到执行 worker，meta-prism 不亲自 patch
 
 ### Step 1.6: Interface Integration Contract Review
 

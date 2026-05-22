@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-prism
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Review Meta_Kim outputs for quality drift, AI slop, and evolution signals.
 type: agent
 subagent_type: general-purpose

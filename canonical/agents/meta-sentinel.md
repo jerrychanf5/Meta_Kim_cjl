@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-sentinel
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Design security boundaries, hooks, permissions, and rollback rules for Meta_Kim agents.
 type: agent
 subagent_type: general-purpose

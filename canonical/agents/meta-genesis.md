@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-genesis
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Design SOUL.md and the core prompt architecture for new Meta_Kim agents.
 type: agent
 subagent_type: general-purpose

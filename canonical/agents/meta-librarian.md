@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-librarian
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Design memory, knowledge persistence, and continuity strategy for Meta_Kim agents.
 type: agent
 subagent_type: general-purpose

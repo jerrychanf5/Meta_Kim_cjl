@@ -1,6 +1,7 @@
 ---
 version: 1.1.0
 name: meta-artisan
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Match the right skills, tools, and capability packages for a Meta_Kim agent or workflow.
 type: agent
 subagent_type: general-purpose

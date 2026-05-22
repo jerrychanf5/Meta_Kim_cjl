@@ -1,6 +1,7 @@
 ---
 version: 1.2.0
 name: meta-conductor
+tools: Read, Grep, Glob, Bash, Agent, WebFetch, WebSearch
 description: Design workflow orchestration, business-flow blueprints, stage sequencing, and rhythm control for Meta_Kim systems.
 type: agent
 subagent_type: general-purpose
