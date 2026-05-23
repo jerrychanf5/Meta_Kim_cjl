@@ -6,6 +6,16 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.1.3] - 2026-05-24
+
+### 修复
+
+- **能力索引稳定再生成** — 当能力内容没有变化时，`discover:global` 现在会保留 canonical capability index 里原有的 `generatedAt`，避免发布验证后只因为时间戳 diff 把工作区弄脏。
+
+### 变更
+
+- **版本元数据** — 包版本提升到 `2.1.3`。
+
 ## [2.1.2] - 2026-05-24
 
 ### 新增

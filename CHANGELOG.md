@@ -6,6 +6,16 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.1.3] - 2026-05-24
+
+### Fixed
+
+- **Stable capability-index regeneration** — `discover:global` now preserves the existing canonical capability index `generatedAt` value when the capability content is unchanged, so release verification no longer leaves the worktree dirty from a timestamp-only diff.
+
+### Changed
+
+- **Version metadata** — Bumped the package version to `2.1.3`.
+
 ## [2.1.2] - 2026-05-24
 
 ### Added
