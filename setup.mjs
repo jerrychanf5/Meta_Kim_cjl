@@ -2259,6 +2259,8 @@ function printMultiMenu(question, choices, focused, selected) {
 }
 
 async function keyboardSelect(question, options) {
+  if (silentMode) return 0;
+
   if (!process.stdin.isTTY) {
     printSelectMenu(question, options, 0);
     const answer = await ask(t.choose(options.length));
@@ -2288,6 +2290,8 @@ async function keyboardSelect(question, options) {
 }
 
 async function keyboardMultiSelect(question, choices, defaultIds, hintText) {
+  if (silentMode) return defaultIds;
+
   if (!process.stdin.isTTY) {
     printMultiMenu(question, choices, 0, new Set(defaultIds));
     const answer = await ask(
@@ -2707,6 +2711,10 @@ function deployPlatformFiles(platformId, targetDir) {
 
 async function askDeployDirectory() {
   console.log("");
+
+  if (silentMode) {
+    return null;
+  }
 
   const choiceIdx = await askSelect(t.npxQuickAskDeploy, [
     t.npxQuickDeployYes,
@@ -3579,6 +3587,26 @@ const GRAPHIFY_PLATFORM_MAP = {
   cursor: "cursor",
 };
 
+const GRAPHIFY_GUIDE_TARGETS = {
+  claude: "CLAUDE.md",
+  codex: "AGENTS.md",
+  claw: "AGENTS.md",
+  opencode: "AGENTS.md",
+  aider: "AGENTS.md",
+  droid: "AGENTS.md",
+  trae: "AGENTS.md",
+  "trae-cn": "AGENTS.md",
+};
+
+function guideAlreadyHasGraphifySection(platform) {
+  const target = GRAPHIFY_GUIDE_TARGETS[platform];
+  if (!target) return false;
+  const filePath = join(PROJECT_DIR, target);
+  if (!existsSync(filePath)) return false;
+  const content = readFileSync(filePath, "utf8");
+  return /^##\s+graphify\b/im.test(content);
+}
+
 /**
  * Attempt to auto-download and install Python 3.10+.
  * Returns the Python object on success, null on failure or user decline.
@@ -3756,6 +3784,12 @@ async function installPythonTools(activeTargets, inUpdateMode = false) {
   for (const target of activeTargets) {
     const platform = GRAPHIFY_PLATFORM_MAP[target];
     if (!platform) continue;
+    if (guideAlreadyHasGraphifySection(platform)) {
+      skip(
+        `${C.dim}graphify ${platform} install skipped (guide already has Graphify section)${C.reset}`,
+      );
+      continue;
+    }
     info(t.graphifySkillRegistering(platform));
     const skillResult = runPythonModule(
       python,
@@ -4921,13 +4955,13 @@ async function main() {
     process.exit(0);
   }
 
-  if (silentMode) {
-    await runInstall();
+  if (updateMode) {
+    await runUpdate();
     process.exit(0);
   }
 
-  if (updateMode) {
-    await runUpdate();
+  if (silentMode) {
+    await runInstall();
     process.exit(0);
   }
 

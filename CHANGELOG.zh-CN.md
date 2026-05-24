@@ -11,6 +11,9 @@
 ### 修复
 
 - **能力索引稳定再生成** — 当能力内容没有变化时，`discover:global` 现在会保留 canonical capability index 里原有的 `generatedAt`，避免发布验证后只因为时间戳 diff 把工作区弄脏。
+- **默认更新流程** — `node setup.mjs --update` 现在优先于非 TTY silent install；列表选择会自动采用默认值，silent/default 更新不会再等待可选部署目录输入。
+- **Graphify 更新幂等** — 当 `AGENTS.md` 或 `CLAUDE.md` 已有 Graphify 段落时，setup 会跳过会改写指南文件的 Graphify 平台安装，避免重复追加 `## graphify` 和行尾污染。
+- **能力索引 mtime 抖动** — 全局能力发现现在把递归 `modified` 时间戳视为易变元数据；能力内容没变时，文件 mtime 变化不会再弄脏 canonical capability index。
 
 ### 变更
 

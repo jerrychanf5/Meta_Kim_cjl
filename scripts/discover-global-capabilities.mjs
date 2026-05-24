@@ -1057,17 +1057,35 @@ export function capabilityIndexWithoutGeneratedAt(index) {
   return normalized;
 }
 
+export function capabilityIndexWithoutVolatileFields(index) {
+  const normalized = JSON.parse(JSON.stringify(index ?? {}));
+
+  function stripVolatile(value) {
+    if (Array.isArray(value)) {
+      for (const item of value) stripVolatile(item);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+
+    delete value.generatedAt;
+    delete value.modified;
+    for (const child of Object.values(value)) {
+      stripVolatile(child);
+    }
+  }
+
+  stripVolatile(normalized);
+  return normalized;
+}
+
 export function preserveGeneratedAtWhenUnchanged(nextIndex, existingIndex) {
   if (
     existingIndex &&
     typeof existingIndex.generatedAt === "string" &&
-    JSON.stringify(capabilityIndexWithoutGeneratedAt(nextIndex)) ===
-      JSON.stringify(capabilityIndexWithoutGeneratedAt(existingIndex))
+    JSON.stringify(capabilityIndexWithoutVolatileFields(nextIndex)) ===
+      JSON.stringify(capabilityIndexWithoutVolatileFields(existingIndex))
   ) {
-    return {
-      ...nextIndex,
-      generatedAt: existingIndex.generatedAt,
-    };
+    return existingIndex;
   }
 
   return nextIndex;

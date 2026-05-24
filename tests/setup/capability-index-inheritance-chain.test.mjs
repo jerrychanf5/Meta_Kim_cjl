@@ -150,22 +150,38 @@ describe("capability index inheritance chain", () => {
     }
   });
 
-  test("global discovery keeps generatedAt stable when canonical capability content is unchanged", () => {
+  test("global discovery keeps volatile timestamps stable when canonical capability content is unchanged", () => {
     const existing = {
       generatedAt: "2026-05-23T21:39:16.715Z",
       registryName: "meta-kim-capabilities",
       summary: { totalAgents: 9 },
+      byCapabilityType: {
+        mcpServers: {
+          "repo:repo-mcp:meta-kim-runtime": {
+            id: "meta-kim-runtime",
+            modified: "2026-05-20T05:24:46.853Z",
+          },
+        },
+      },
     };
     const next = {
       generatedAt: "2026-05-23T21:45:13.184Z",
       registryName: "meta-kim-capabilities",
       summary: { totalAgents: 9 },
+      byCapabilityType: {
+        mcpServers: {
+          "repo:repo-mcp:meta-kim-runtime": {
+            id: "meta-kim-runtime",
+            modified: "2026-05-24T09:13:38.181Z",
+          },
+        },
+      },
     };
 
-    assert.equal(
-      preserveGeneratedAtWhenUnchanged(next, existing).generatedAt,
-      existing.generatedAt,
-      "pure regeneration must not dirty the canonical capability index timestamp",
+    assert.deepEqual(
+      preserveGeneratedAtWhenUnchanged(next, existing),
+      existing,
+      "pure regeneration must not dirty canonical capability index timestamps",
     );
     assert.equal(
       preserveGeneratedAtWhenUnchanged(

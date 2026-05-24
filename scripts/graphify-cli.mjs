@@ -2,7 +2,7 @@
 
 import process from "node:process";
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   detectPython310,
@@ -178,6 +178,43 @@ function checkGraphFreshness(cwd = process.cwd()) {
   return true;
 }
 
+function stampGraphFreshness(cwd = process.cwd()) {
+  const currentHead = readCurrentHead(cwd);
+  if (!currentHead) {
+    return false;
+  }
+
+  const reportPath = path.join(cwd, "graphify-out", "GRAPH_REPORT.md");
+  const graphPath = path.join(cwd, "graphify-out", "graph.json");
+  let changed = false;
+
+  if (existsSync(graphPath)) {
+    const graph = JSON.parse(readFileSync(graphPath, "utf8"));
+    if (!commitsMatch(String(graph.built_at_commit ?? ""), currentHead)) {
+      graph.built_at_commit = currentHead;
+      writeFileSync(graphPath, `${JSON.stringify(graph, null, 2)}\n`, "utf8");
+      changed = true;
+    }
+  }
+
+  if (existsSync(reportPath)) {
+    const reportRaw = readFileSync(reportPath, "utf8");
+    const nextReport = reportRaw.replace(
+      /Built from commit:\s*`?([0-9a-f]{7,40})`?/i,
+      `Built from commit: \`${currentHead}\``,
+    );
+    if (nextReport !== reportRaw) {
+      writeFileSync(reportPath, nextReport, "utf8");
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    console.log(`graphify freshness stamped to HEAD ${currentHead.slice(0, 8)}`);
+  }
+  return true;
+}
+
 function runCheck() {
   const python = ensurePython({ requirePip: true });
   if (!python) {
@@ -254,6 +291,9 @@ function runRebuild() {
   });
   if (!direct.error) {
     process.exitCode = direct.status || 0;
+    if ((direct.status || 0) === 0) {
+      stampGraphFreshness();
+    }
     return;
   }
 
@@ -269,6 +309,9 @@ function runRebuild() {
     { stdio: "inherit" },
   );
   process.exitCode = result.status || 0;
+  if ((result.status || 0) === 0) {
+    stampGraphFreshness();
+  }
 }
 
 switch (command) {

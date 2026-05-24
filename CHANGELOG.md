@@ -11,6 +11,9 @@ When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the
 ### Fixed
 
 - **Stable capability-index regeneration** — `discover:global` now preserves the existing canonical capability index `generatedAt` value when the capability content is unchanged, so release verification no longer leaves the worktree dirty from a timestamp-only diff.
+- **Default update flow** — `node setup.mjs --update` now wins over non-TTY silent install mode, chooses default list options without waiting for stdin, and skips the optional custom deploy directory prompt in silent/default update runs.
+- **Graphify update idempotency** — Setup now skips guide-mutating Graphify platform installs when `AGENTS.md` or `CLAUDE.md` already contains a Graphify section, preventing duplicate `## graphify` blocks and line-ending churn.
+- **Capability-index mtime churn** — Global capability discovery now treats recursive `modified` timestamps as volatile metadata, so file mtime changes do not dirty canonical capability indexes when capabilities are unchanged.
 
 ### Changed
 

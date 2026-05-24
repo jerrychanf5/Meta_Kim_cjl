@@ -84,6 +84,21 @@ const AMBER_BRIGHT = "\x1b[38;2;200;160;80m";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
+const GRAPHIFY_GUIDE_TARGETS = {
+  claude: "CLAUDE.md",
+};
+
+function guideAlreadyHasGraphifySection(platform) {
+  const guideFile = GRAPHIFY_GUIDE_TARGETS[platform];
+  if (!guideFile) return false;
+  try {
+    const content = readFileSync(path.join(repoRoot, guideFile), "utf8");
+    return /^##\s+graphify\b/im.test(content);
+  } catch {
+    return false;
+  }
+}
+
 const updateMode = process.argv.includes("--update");
 const dryRun = process.argv.includes("--dry-run");
 const pluginsOnly = process.argv.includes("--plugins-only");
@@ -2954,12 +2969,18 @@ async function main() {
       console.log(t.pythonInstallHintGraphify);
     } else {
       const ensureGraphifyWiring = () => {
-        runPythonModule(
-          python,
-          ["-m", "graphify", "claude", "install"],
-          undefined,
-          { stdio: "pipe" },
-        );
+        if (guideAlreadyHasGraphifySection("claude")) {
+          console.log(
+            `${C.yellow}⊘${C.reset} ${C.dim}graphify claude install skipped (guide already has Graphify section)${C.reset}`,
+          );
+        } else {
+          runPythonModule(
+            python,
+            ["-m", "graphify", "claude", "install"],
+            undefined,
+            { stdio: "pipe" },
+          );
+        }
         runPythonModule(
           python,
           ["-m", "graphify", "hook", "install"],
