@@ -6,6 +6,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.2.5] - 2026-05-25
+
+### 修复
+
+- **EB-005（HIGH）— Worker 验证声明证据契约** — 所有上报测试通过计数的 worker 必须附带 `workerExecutionEvidence` 条目。关闭 v2.2.2/v2.2.3 历史造假问题。详见 `config/contracts/workflow-contract.json::workerTaskPacket.workerExecutionEvidenceField`。审查门在 `canonical/agents/meta-prism.md::Decision Rule 16`（按 Rule 17 自我适用）。
+- **EB-006（MEDIUM）— 本地化触发例外抽取到配置** — `scripts/validate-project.mjs::isAllowedLocalizedTriggerLine` 不再硬编码 v2.2.4 的允许列表。移至 `config/contracts/localized-trigger-exceptions.json`，符合 PRIN-03/04。配置缺失时回退到向后兼容的硬编码默认值。
+- **EB-007（LOW）— Narrow-Amendment Protocol 文档化** — `canonical/skills/meta-theory/references/dev-governance.md` 定义 4 条边界协议（A：仅 validator/config 层；B：≤1 个文件；C：不改 worker 可见 schema；D：事后治理留痕）。
+
+### 新增
+
+- `config/contracts/localized-trigger-exceptions.json` — 供 `validate-project.mjs` 消费的配置
+- `.meta-kim/eb-003-investigation.md` — ECC GateGuard 事实批量化的调查记录；4 个用户决策选项；未对插件做任何修改
+
+### 变更
+
+- `canonical/agents/meta-prism.md` — Workflow 第 5 步子项 + Decision Rules 16-17
+- `config/contracts/workflow-contract.json` — 新增 `workerExecutionEvidenceField`
+- `scripts/validate-project.mjs` — `isAllowedLocalizedTriggerLine` 改为配置驱动，附向后兼容回退
+
+### 顺延到 v2.3.0
+
+- EB-002（HIGH）：`read_only_verifier` 能力槽（需要修改 `spine-state.mjs`，已冻结）
+- EB-004（LOW）：`preDecisionOptionFrame` 嵌套归一化（需要修改 `spine-state.mjs`，已冻结）
+- EB-003（MEDIUM）：等用户选择 A-D 选项
+- **EB-008（HIGH，v2.2.5 W2 审查暴露）**：`workerExecutionEvidence.actualOutput` 在静默成功命令（如 `node --check`、`JSON.parse`）下的语义二义性。schema 需要 `successMarkerFormat` 澄清字段。v2.2.5 按 W2 裁决将首次应用偏差记为 `accepted_risk`（第二选项是惩罚规则首日自适用）。
+- **EB-009（LOW，v2.2.5 W2 审查暴露）**：`scripts/validate-project.mjs:15` 引入的 `loadRuntimeProfiles` 不被新的 `loadLocalizedTriggerExceptions` 路径引用。已有的遗留条件；确认未使用后清理。
+- **EB-010（MEDIUM，v2.2.5 W2 审查暴露）**：`protocols.workerTaskPacket.*` 同级 schema 风格异构 — `verifyStepsField` / `fileCompletionListField` / `workerExecutionEvidenceField` 混用 `type: "array"` 与 `fieldType: "array"` 约定。需统一。
+- `workerExecutionEvidenceField` 的 validator 强制（当前为叙述层 + Rule 16）
+
 ## [2.2.4] - 2026-05-25
 
 ### 修复（v2.2.2 审查的演进 backlog 收尾）

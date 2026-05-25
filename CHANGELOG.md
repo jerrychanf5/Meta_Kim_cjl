@@ -6,6 +6,35 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.2.5] - 2026-05-25
+
+### Fixed
+
+- **EB-005 (HIGH) — Worker verification claim evidence contract** — Workers reporting test pass counts must include `workerExecutionEvidence` entries. Closes v2.2.2/v2.2.3 historical fabrication. See `config/contracts/workflow-contract.json::workerTaskPacket.workerExecutionEvidenceField`. Reviewer gate in `canonical/agents/meta-prism.md::Decision Rule 16` (self-applying per Rule 17).
+- **EB-006 (MEDIUM) — Localized trigger exceptions extracted to config** — `scripts/validate-project.mjs::isAllowedLocalizedTriggerLine` no longer hardcodes the v2.2.4 allowlist. Moved to `config/contracts/localized-trigger-exceptions.json` per PRIN-03/04. Backwards-compatible fallback if config missing.
+- **EB-007 (LOW) — Narrow-Amendment Protocol documented** — `canonical/skills/meta-theory/references/dev-governance.md` defines the 4-boundary protocol (A: validator/config layer only; B: ≤1 file; C: no worker-facing schema change; D: post-hoc governance record).
+
+### Added
+
+- `config/contracts/localized-trigger-exceptions.json` — config consumed by `validate-project.mjs`
+- `.meta-kim/eb-003-investigation.md` — investigation note for ECC GateGuard fact-batching; 4 user decision options; no plugin edit applied
+
+### Changed
+
+- `canonical/agents/meta-prism.md` — Workflow step 5 substep + Decision Rules 16-17
+- `config/contracts/workflow-contract.json` — `workerExecutionEvidenceField` added
+- `scripts/validate-project.mjs` — `isAllowedLocalizedTriggerLine` config-driven with backwards-compat
+
+### Carry-forward to v2.3.0
+
+- EB-002 (HIGH): `read_only_verifier` capability slot (requires `spine-state.mjs`, frozen)
+- EB-004 (LOW): `preDecisionOptionFrame` nesting normalization (requires `spine-state.mjs`, frozen)
+- EB-003 (MEDIUM): user decision required on options A-D
+- **EB-008 (HIGH, surfaced by v2.2.5 W2 review)**: `workerExecutionEvidence.actualOutput` ambiguity for silent-success commands (e.g., `node --check`, `JSON.parse`). Schema needs `successMarkerFormat` clarification field. v2.2.5 accepts the first-application drift as `accepted_risk` per W2 ruling (alternative was punishing rule self-application on day 1).
+- **EB-009 (LOW, surfaced by v2.2.5 W2 review)**: `scripts/validate-project.mjs:15` imports `loadRuntimeProfiles` not referenced by the new `loadLocalizedTriggerExceptions` path. Pre-existing condition; verify and prune if unused.
+- **EB-010 (MEDIUM, surfaced by v2.2.5 W2 review)**: Sibling schema style heterogeneity in `protocols.workerTaskPacket.*` — `verifyStepsField` / `fileCompletionListField` / `workerExecutionEvidenceField` use mixed conventions (`type: "array"` vs `fieldType: "array"`). Normalize.
+- Validator-level enforcement of `workerExecutionEvidenceField` (currently narrative-tier + Rule 16)
+
 ## [2.2.4] - 2026-05-25
 
 ### Fixed (v2.2.2 review evolution backlog closure)

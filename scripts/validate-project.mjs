@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import { promises as fs, readFileSync } from "node:fs";
 import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -2426,16 +2426,44 @@ async function validateDocumentationFacts() {
   await validateEnglishGovernanceFiles();
 }
 
+let _localizedTriggerExceptionsCache = null;
+function loadLocalizedTriggerExceptions() {
+  if (_localizedTriggerExceptionsCache !== null) return _localizedTriggerExceptionsCache;
+  try {
+    const configPath = path.resolve(
+      repoRoot,
+      "config",
+      "contracts",
+      "localized-trigger-exceptions.json",
+    );
+    const cfg = JSON.parse(readFileSync(configPath, "utf8"));
+    const patterns = (cfg.patterns || [])
+      .filter((p) => p.type === "regex")
+      .map((p) => new RegExp(p.pattern));
+    const literals = (cfg.literals || []).map((l) => l.value);
+    _localizedTriggerExceptionsCache = { patterns, literals, source: "config" };
+  } catch {
+    _localizedTriggerExceptionsCache = {
+      patterns: [/^\s*trigger:\s*"/],
+      literals: [
+        "`元理论`",
+        "`仅分析`",
+        "`只读`",
+        '"不需要确认"',
+        "`方案 A`",
+        "当前以聊天确认卡展示，不是弹窗",
+      ],
+      source: "hardcoded-fallback",
+    };
+  }
+  return _localizedTriggerExceptionsCache;
+}
+
 function isAllowedLocalizedTriggerLine(line) {
-  return (
-    /^\s*trigger:\s*"/.test(line) ||
-    line.includes("`元理论`") ||
-    line.includes("`仅分析`") ||
-    line.includes("`只读`") ||
-    line.includes('"不需要确认"') ||
-    line.includes("`方案 A`") ||
-    line.includes("当前以聊天确认卡展示，不是弹窗")
-  );
+  const ex = loadLocalizedTriggerExceptions();
+  for (const p of ex.patterns) if (p.test(line)) return true;
+  for (const l of ex.literals) if (line.includes(l)) return true;
+  return false;
 }
 
 async function readExistingTextFile(relativePath) {

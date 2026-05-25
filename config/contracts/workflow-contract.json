@@ -2293,6 +2293,29 @@
             "skipReason": {"type": "string", "description": "Required when status is skipped or failed"}
           }
         }
+      },
+      "workerExecutionEvidenceField": {
+        "fieldName": "workerExecutionEvidence",
+        "purpose": "Workers reporting verification command pass/fail claims MUST include actual command output evidence. Closes the v2.2.2/v2.2.3 historical fabrication where workers claimed '20/20 pass' without executing commands. Each evidence entry binds one command claim to its actual stdout/stderr capture.",
+        "fieldType": "array",
+        "itemSchema": {
+          "command": {"type": "string", "required": true, "description": "Exact shell command claimed to have been run"},
+          "actualOutput": {"type": "string", "required": true, "description": "Real captured stdout (tail or summary OK; must be non-empty if status=verified)"},
+          "passClaim": {"type": "string", "required": true, "description": "What the worker is claiming"},
+          "status": {"type": "string", "enum": ["verified", "fabricated", "skipped"], "required": true, "description": "verified = actually run; fabricated = claim without execution (forbidden); skipped = intentionally not run with reason"},
+          "skipReason": {"type": "string", "required": false, "description": "Required if status=skipped"},
+          "runBy": {"type": "string", "required": true, "description": "Owner who ran it (worker name or 'main-thread')"},
+          "runAt": {"type": "string", "required": true, "description": "ISO 8601 timestamp"}
+        },
+        "enforcement": {
+          "level": "narrative-tier-v2.2.5",
+          "violationAntiPattern": "SLOP-07-fabricated-verification-claim",
+          "validatorBinding": "deferred-to-v2.3.0-R8",
+          "reviewerBinding": "meta-prism Decision Rule 16"
+        },
+        "introducedIn": "v2.2.5",
+        "closes": "EB-005",
+        "rootCause": "v2.2.2/v2.2.3 worker reports claimed '20/20 pass' for npm run meta:check but never actually invoked the command."
       }
     },
     "workerResultPacket": {
