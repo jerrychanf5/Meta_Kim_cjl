@@ -469,6 +469,76 @@ function hasNonEmptyArray(value) {
   return Array.isArray(value) && value.length > 0;
 }
 
+const PRE_EXECUTION_PACKET_STATUS_FIELDS = {
+  productCompletenessPacket: "completenessStatus",
+  experienceQualityPacket: "experienceStatus",
+  testStrategyPacket: "testStatus",
+  structureHygienePacket: "hygieneStatus",
+  permissionMatrixPacket: "permissionStatus",
+  sideEffectLedgerPacket: "sideEffectStatus",
+  rollbackPlanPacket: "rollbackStatus",
+};
+
+const PRE_EXECUTION_ALLOWED_STATUSES = {
+  productCompletenessPacket: ["pass"],
+  experienceQualityPacket: ["pass", "not_applicable_with_reason"],
+  testStrategyPacket: ["pass"],
+  structureHygienePacket: ["pass"],
+  permissionMatrixPacket: ["pass"],
+  sideEffectLedgerPacket: ["none", "tracked"],
+  rollbackPlanPacket: ["ready", "not_applicable_with_reason"],
+};
+
+const REQUIRED_PRE_EXECUTION_PACKETS = [
+  "dispatchEnvelopePacket",
+  "dispatchBoard",
+  "orchestrationTaskBoardPacket",
+  ...Object.keys(PRE_EXECUTION_PACKET_STATUS_FIELDS),
+];
+
+function collectPreExecutionReadinessGaps(state) {
+  const missing = [];
+
+  for (const packetName of REQUIRED_PRE_EXECUTION_PACKETS) {
+    const packet = state?.[packetName];
+    if (!isObject(packet)) {
+      missing.push(packetName);
+      continue;
+    }
+
+    const statusField = PRE_EXECUTION_PACKET_STATUS_FIELDS[packetName];
+    if (!statusField) continue;
+
+    const allowed = PRE_EXECUTION_ALLOWED_STATUSES[packetName] || [];
+    if (!allowed.includes(packet[statusField])) {
+      missing.push(`${packetName}.${statusField}`);
+    }
+  }
+
+  return missing;
+}
+
+export function checkPreExecutionReadiness(state) {
+  const normalized = normalizeSpineState(state);
+  if (!normalized || normalized.queryBypass || normalized.simpleMode) {
+    return {
+      met: true,
+      missing: [],
+      reason: "pre-execution readiness gate bypassed",
+    };
+  }
+
+  const missing = collectPreExecutionReadinessGaps(normalized);
+  return {
+    met: missing.length === 0,
+    missing,
+    reason:
+      missing.length === 0
+        ? "pre-execution design-time packets are complete"
+        : "Pre-execution readiness requires complete design-time dispatch, product, experience, test, structure, permission, side-effect, and rollback packets before execution.",
+  };
+}
+
 function collectCapabilityNodeBindingGaps(state) {
   const missing = [];
 
@@ -521,8 +591,11 @@ function collectCapabilityNodeBindingGaps(state) {
         if (!hasNonEmptyArray(lane.candidateOwners)) {
           missing.push(`${context}.candidateOwners`);
         }
-        if (!hasNonEmptyArray(lane.candidateSkills)) {
-          missing.push(`${context}.candidateSkills`);
+        if (
+          !hasNonEmptyArray(lane.candidateSkills) &&
+          !hasNonEmptyArray(lane.candidateCapabilities)
+        ) {
+          missing.push(`${context}.candidateSkills or candidateCapabilities`);
         }
       }
     }
@@ -561,9 +634,13 @@ function collectCapabilityNodeBindingGaps(state) {
       if (!hasNonEmptyArray(role.governanceStageNodes)) {
         missing.push(`${context}.governanceStageNodes`);
       }
-      if (!hasNonEmptyArray(role.matchedSkills)) {
-        missing.push(`${context}.matchedSkills`);
-      } else {
+      if (
+        !hasNonEmptyArray(role.matchedSkills) &&
+        !hasNonEmptyArray(role.matchedCapabilities)
+      ) {
+        missing.push(`${context}.matchedCapabilities or matchedSkills`);
+      }
+      if (hasNonEmptyArray(role.matchedSkills)) {
         for (const [skillIndex, skill] of role.matchedSkills.entries()) {
           const skillContext = `${context}.matchedSkills[${skillIndex}]`;
           for (const field of [
@@ -576,6 +653,56 @@ function collectCapabilityNodeBindingGaps(state) {
             "selectionScope",
           ]) {
             if (!isNonEmptyString(skill?.[field])) missing.push(`${skillContext}.${field}`);
+          }
+        }
+      }
+      if (hasNonEmptyArray(role.matchedCapabilities)) {
+        for (const [capabilityIndex, capability] of role.matchedCapabilities.entries()) {
+          const capabilityContext = `${context}.matchedCapabilities[${capabilityIndex}]`;
+          for (const field of [
+            "matchId",
+            "capabilitySlot",
+            "bindingType",
+            "bindingRef",
+            "source",
+            "selectionReason",
+            "selectionScope",
+          ]) {
+            if (!isNonEmptyString(capability?.[field])) {
+              missing.push(`${capabilityContext}.${field}`);
+            }
+          }
+        }
+        if (!hasNonEmptyArray(role.capabilityBindings)) {
+          missing.push(`${context}.capabilityBindings`);
+        } else {
+          for (const [bindingIndex, binding] of role.capabilityBindings.entries()) {
+            const bindingContext = `${context}.capabilityBindings[${bindingIndex}]`;
+            for (const field of [
+              "bindingId",
+              "capabilitySlot",
+              "bindingType",
+              "bindingRef",
+              "source",
+              "evidenceRef",
+            ]) {
+              if (!isNonEmptyString(binding?.[field])) {
+                missing.push(`${bindingContext}.${field}`);
+              }
+            }
+          }
+          for (const [capabilityIndex, capability] of role.matchedCapabilities.entries()) {
+            const hasBinding = role.capabilityBindings.some(
+              (binding) =>
+                binding.capabilitySlot === capability.capabilitySlot &&
+                binding.bindingType === capability.bindingType &&
+                binding.bindingRef === capability.bindingRef,
+            );
+            if (!hasBinding) {
+              missing.push(
+                `${context}.matchedCapabilities[${capabilityIndex}].capabilityBinding`,
+              );
+            }
           }
         }
       }
@@ -691,6 +818,11 @@ export function checkStageRequirements(state) {
   }
 
   if (STAGE_ORDER.indexOf(stage) >= STAGE_ORDER.indexOf("execution")) {
+    const readinessGate = checkPreExecutionReadiness(normalized);
+    if (!readinessGate.met) {
+      return readinessGate;
+    }
+
     const nodeBindingGate = checkCapabilityNodeBindings(normalized);
     if (!nodeBindingGate.met) {
       return nodeBindingGate;

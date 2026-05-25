@@ -6,6 +6,32 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.2.1] - 2026-05-25
+
+### 新增
+
+- **v2.2.0 Prism 独立审查** — `docs/v2.2.0-prism-review.md` 记录 `PASS-WITH-FINDINGS` 结论，对照 5 条铁律 + 4 条用户决策做合规审计，并检测新契约词汇与产线钩子之间的 drift（v2.3.0 接入前需收敛）。
+
+### 变更
+
+- **workflow 契约扩展** — `config/contracts/workflow-contract.json` 新增 packet 词汇、命名策略字段、维度定义（+580 行），对齐 v2.2.0 设计框架，为 v2.3.0 opt-in 接入做准备。
+- **校验器深化** — `scripts/validate-run-artifact.mjs` 与 `scripts/validate-project.mjs` 增加 packet / binding / secret-boundary 校验（合计 +1027 行），落地新契约语义。
+- **Spine + dispatch 钩子更新** — `canonical/runtime-assets/shared/hooks/spine-state.mjs` 与 `canonical/runtime-assets/claude/hooks/enforce-agent-dispatch.mjs` 新增阶段要求细化与 dispatch envelope 证据（合计 +283 行），与新契约一致。
+- **meta-theory skill + references** — `canonical/skills/meta-theory/SKILL.md` 与 `references/dev-governance.md`、`references/create-agent.md` 澄清 capability-binding 证据、owner-display 命名、pre-decision option-frame 语言规则。
+- **9 个 meta agent 人设刷新** — 全部 `canonical/agents/meta-*.md` 更新 naming acceptance、role-display 规则与 capability-binding 语义。
+- **run artifact fixtures 全量重生成** — 7 个 `tests/fixtures/run-artifacts/*.json` 按新 packet 词汇重生成（+2854 行），契约测试保持绿。
+- **contract compliance + run artifact + spine + business-flow 测试扩展** — `tests/meta-theory/*.test.mjs` 覆盖新校验器输出、packet 结构与编排证据（合计 +782 行）。
+- **QuickStart + 跨 runtime + 能力矩阵文档刷新** — `docs/QUICKSTART.md`、`docs/cross-runtime-meta-enforcement.md`、`docs/runtime-capability-matrix.md`、`docs/runtime-coverage-audit.md`、`docs/repo-map.md`、`docs/protocols/meta-conductor-agent-teams-playbook-integration.md` 反映 v2.2.x 契约面。
+- **save-progress 命令 + OpenClaw 模板** — `canonical/runtime-assets/claude/commands/save-progress/SKILL.md` 与 `canonical/runtime-assets/openclaw/openclaw.template.json` 对齐新 run-artifact 要求。
+- **能力索引归一化** — `config/capability-index/meta-kim-capabilities.json` 与 `config/contracts/capability-index.schema.json` 清理。
+- **AGENTS.md + CLAUDE.md** — 跨 runtime 治理摘要对齐 v2.2.x 契约。
+- **版本元数据** — package 版本号升至 `2.2.1`。
+
+### 架构说明
+
+- v2.2.1 把 v2.2.0 发版前积压的 WIP 合并为一次完整的契约升级。它**尚未**将 `shared/lib/` PoC 模块接入产线钩子——那是 v2.3.0 的边界。
+- Prism review 列出 R4/R7 接入前需收敛的项；详情见 `docs/v2.2.0-prism-review.md` verdict 与建议顺序。
+
 ## [2.2.0] - 2026-05-25
 
 ### 新增

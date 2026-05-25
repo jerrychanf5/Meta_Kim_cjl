@@ -1,6 +1,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
+import { readFile as readFsFile } from "node:fs/promises";
 
 import {
   CODEX_BUSINESS_ROLE_AGENTS,
@@ -226,6 +227,7 @@ describe("sync-runtimes / Codex project hooks", () => {
       enforceEntry.matcher,
       /Bash\|apply_patch\|Edit\|Write\|MultiEdit\|NotebookEdit\|Agent/,
     );
+    assert.match(enforceEntry.matcher, /spawn_agent/);
 
     const graphifyEntry = preToolUse.find((entry) =>
       entry.hooks?.some((cmd) =>
@@ -296,6 +298,20 @@ describe("sync-runtimes / Codex project hooks", () => {
     assert.match(source, /existsSync\(graphPath\)/);
     assert.match(source, /systemMessage/);
     assert.doesNotMatch(source, /\[ -f|\|\| true|2>\/dev\/null/);
+  });
+});
+
+describe("sync-runtimes / OpenClaw template portability", () => {
+  test("canonical OpenClaw template uses forward-slash placeholders", async () => {
+    const templateRaw = await readFsFile(
+      "canonical/runtime-assets/openclaw/openclaw.template.json",
+      "utf8",
+    );
+
+    assert.doesNotMatch(templateRaw, /__REPO_ROOT__\\/);
+    assert.match(templateRaw, /__REPO_ROOT__\/openclaw\/workspaces/);
+    assert.match(templateRaw, /__REPO_ROOT__\/openclaw\/skills/);
+    assert.doesNotMatch(templateRaw, /before_tool_call/);
   });
 });
 

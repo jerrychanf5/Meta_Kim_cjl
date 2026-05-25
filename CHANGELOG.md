@@ -6,6 +6,32 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.2.1] - 2026-05-25
+
+### Added
+
+- **v2.2.0 Prism independent review** — `docs/v2.2.0-prism-review.md` records `PASS-WITH-FINDINGS` verdict against the 5 ironclad rules and 4 user decisions, plus drift detection between new contract vocabulary and production hooks scheduled for v2.3.0 wiring.
+
+### Changed
+
+- **Workflow contract extensions** — `config/contracts/workflow-contract.json` adds new packet vocabularies, naming policy fields, and dimension definitions (+580 lines) that align with the v2.2.0 design framework and prepare for v2.3.0 opt-in wiring.
+- **Validator deepening** — `scripts/validate-run-artifact.mjs` and `scripts/validate-project.mjs` add comprehensive packet/binding/secret-boundary checks (+1027 lines combined), enforcing the new contract semantics.
+- **Spine + dispatch hook updates** — `canonical/runtime-assets/shared/hooks/spine-state.mjs` and `canonical/runtime-assets/claude/hooks/enforce-agent-dispatch.mjs` add stage requirement refinements and dispatch envelope evidence (+283 lines combined) consistent with the new contract.
+- **Meta-theory skill + references** — `canonical/skills/meta-theory/SKILL.md` and `references/dev-governance.md`, `references/create-agent.md` clarify capability-binding evidence, owner-display naming, and pre-decision option-frame language.
+- **Meta agent persona refreshes** — All 9 `canonical/agents/meta-*.md` profiles updated for naming acceptance, role-display rules, and capability-binding semantics.
+- **Run artifact fixtures regenerated** — All 7 `tests/fixtures/run-artifacts/*.json` regenerated with new packet vocabularies (+2854 lines) so contract tests stay green.
+- **Contract compliance + run artifact + spine + business-flow tests extended** — `tests/meta-theory/*.test.mjs` cover the new validator output, packet shapes, and orchestration evidence (+782 lines combined).
+- **Quickstart + cross-runtime + runtime matrix docs refreshed** — `docs/QUICKSTART.md`, `docs/cross-runtime-meta-enforcement.md`, `docs/runtime-capability-matrix.md`, `docs/runtime-coverage-audit.md`, `docs/repo-map.md`, and `docs/protocols/meta-conductor-agent-teams-playbook-integration.md` updated to reflect the v2.2.x contract surface.
+- **Save-progress command + OpenClaw template** — `canonical/runtime-assets/claude/commands/save-progress/SKILL.md` and `canonical/runtime-assets/openclaw/openclaw.template.json` aligned with new run-artifact requirements.
+- **Capability index normalization** — `config/capability-index/meta-kim-capabilities.json` and `config/contracts/capability-index.schema.json` cleaned up.
+- **AGENTS.md + CLAUDE.md** — Cross-runtime governance summary aligned with v2.2.x contract.
+- **Version metadata** — Bumped the package version to `2.2.1`.
+
+### Architecture Notes
+
+- v2.2.1 consolidates the WIP that pre-dated the v2.2.0 ship into a single coherent contract uplift. It does NOT yet wire `shared/lib/` PoC modules into production hooks — that remains the v2.3.0 boundary.
+- The Prism review identifies items to address before R4/R7 wiring; see `docs/v2.2.0-prism-review.md` for the verdict and recommended sequence.
+
 ## [2.2.0] - 2026-05-25
 
 ### Added

@@ -11,7 +11,7 @@ If you only keep six rules in mind:
 - `.claude/` is a runtime projection generated from canonical assets. Sync it instead of hand-forking it.
 - When `meta-theory` is active, the main Claude thread dispatches; it does not execute complex work directly.
 - Capability-first dispatch is **mechanically enforced** in Claude Code via the `enforce-agent-dispatch.mjs` PreToolUse hook (deny payload). Codex and Cursor v1.7+ now have the same hook projected; see `docs/cross-runtime-meta-enforcement.md` for the four-runtime matrix.
-- User-visible worker names must be coarse business role-family names such as `前端`, `后端`, `测试`, `frontend`, `backend`, or `test`, not scoped work items or host-generated personal nicknames.
+- User-visible worker names must be coarse English business role-family names such as `frontend`, `backend`, or `test`, not scoped work items or host-generated personal nicknames. Localized trigger words may be recognized as input, but durable governance files stay English.
 
 ## What This Repository Is
 
@@ -172,7 +172,7 @@ The blueprint does not need every lane for every task, but omissions should be d
 Keep three names separate:
 
 - `ownerAgent`: real governance or execution owner, for example `meta-conductor` or `frontend-developer`
-- `roleDisplayName`: short user-visible business role family, for example `前端`, `后端`, `测试`, `frontend`, `backend`, or `test`
+- `roleDisplayName`: short user-visible English business role family, for example `frontend`, `backend`, or `test`
 - `runtimeInstanceAlias`: incidental runtime nickname, if Claude or another host assigns one
 
 Rules:

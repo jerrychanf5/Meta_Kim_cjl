@@ -10,7 +10,7 @@ If you only keep five rules in mind:
 - `meta-warden` is the normal public front door. Other meta agents are backstage specialists.
 - Dispatch is capability-first: describe the capability, search agents / skills / tools / capability indexes, then choose the best owner.
 - Long-term behavior lives in `canonical/`, `config/contracts/`, and `config/capability-index/`. Runtime trees are projections unless explicitly documented otherwise.
-- User-visible worker names must be coarse business role-family names such as `前端`, `后端`, `测试`, `frontend`, `backend`, or `test`, not scoped work items or host-generated personal nicknames.
+- User-visible worker names must be coarse English business role-family names such as `frontend`, `backend`, or `test`, not scoped work items or host-generated personal nicknames. Localized trigger words may be recognized as input, but durable governance files stay English.
 
 ## Codex Output Rules
 
@@ -116,12 +116,12 @@ Hardcoding a specific agent name before discovery is a shortcut, not the canonic
 
 ### Mechanical Enforcement (Cross-Runtime)
 
-Capability-first is now enforced mechanically on three of the four runtimes, not just prompt-level discipline:
+Capability-first has a mechanical hook path on Claude Code, Codex, and Cursor, but the default mode is progressive. During the grace window it warns unless `META_KIM_CAPABILITY_GATE=block` is set; do not describe the default as immediate hard-deny.
 
-- **Claude Code**: mechanically enforced via the PreToolUse hook `enforce-agent-dispatch.mjs` (deny payload `{hookSpecificOutput.permissionDecision: "deny"}`). The gate denies `Agent` dispatches in stages `execution`, `review`, `meta_review`, `verification`, `evolution` unless `fetchRecord.capabilitySearchPerformed === true`. Discovery stages `critical`, `fetch`, `thinking` are exempt.
-- **Codex CLI**: mechanically enforced via PreToolUse hook (same `enforce-agent-dispatch.mjs` script projected to `.codex/hooks/`). Matcher: `"Bash|apply_patch|Edit|Write|MultiEdit|NotebookEdit|Agent"`. Registered at `scripts/runtime-hook-mapping.mjs:213-219`.
+- **Claude Code**: enforced via the PreToolUse hook `enforce-agent-dispatch.mjs` (deny payload `{hookSpecificOutput.permissionDecision: "deny"}` when the effective mode is `block`). The gate covers `Agent` dispatches in stages `execution`, `review`, `meta_review`, `verification`, `evolution` unless `fetchRecord.capabilitySearchPerformed === true`. Discovery stages `critical`, `fetch`, `thinking` are exempt except for execution-intent dispatch before design-time readiness.
+- **Codex CLI**: enforced via PreToolUse hook (same `enforce-agent-dispatch.mjs` script projected to `.codex/hooks/`). Matcher includes `"Bash|apply_patch|Edit|Write|MultiEdit|NotebookEdit|Agent|spawn_agent"`. Registered at `scripts/runtime-hook-mapping.mjs:213-219`.
 - **Cursor v1.7+**: mechanically enforced via `preToolUse` hook with `failClosed: true` (crash defaults to deny). Uses exit code 2 + stderr deny reason or stdout JSON `{"permission":"deny",...}`. Registered at `scripts/runtime-hook-mapping.mjs:269-280`.
-- **OpenClaw**: declarative-only — hard refusal prose in workspace `HEARTBEAT.md` and `SOUL.md` (`executionBlock=true`). OpenClaw has no PreToolUse equivalent at the lifecycle-hook level, so capability-first remains a prompt constraint there.
+- **OpenClaw**: current Meta_Kim template is declarative-only — hard refusal prose in workspace `HEARTBEAT.md` and `SOUL.md` (`executionBlock=true`). OpenClaw plugin hooks can provide `before_tool_call`, but Meta_Kim has not installed a plugin enforcement adapter yet, so current OpenClaw enforcement remains a prompt constraint with an upgrade path.
 
 Override knob (all hook-equipped runtimes): `META_KIM_CAPABILITY_GATE=progressive|block|warn|off` (default `progressive`; set `block` env for immediate hard deny). Set `warn` to emit stderr warnings without denying, or `off` to disable the gate entirely. Runtime-payload schema selector: `META_KIM_HOOK_RUNTIME=claude|codex|cursor`.
 
@@ -177,7 +177,7 @@ Not every task needs every lane, but omitted lanes should be intentional. The bu
 Separate these three names:
 
 - `ownerAgent`: the real governance or execution owner, for example `meta-conductor` or `frontend-developer`
-- `roleDisplayName`: the short user-visible business role family, for example `前端`, `后端`, `测试`, `frontend`, `backend`, or `test`
+- `roleDisplayName`: the short user-visible English business role family, for example `frontend`, `backend`, or `test`
 - `runtimeInstanceAlias`: the host runtime's incidental nickname, if any
 
 Rules:

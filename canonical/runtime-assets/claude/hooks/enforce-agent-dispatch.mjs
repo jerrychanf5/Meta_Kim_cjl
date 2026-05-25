@@ -82,6 +82,7 @@ import { isReadOnlyBash, classifyBashCommand } from "./bash-readonly-whitelist.m
 import {
   readSpineState,
   checkCapabilityNodeBindings,
+  checkPreExecutionReadiness,
   isExecutionTool,
   isReadOnlyTool,
   recordDispatch,
@@ -204,6 +205,43 @@ function isAgentDispatchTool(name) {
   return name === "Agent" || name === "spawn_agent";
 }
 
+function dispatchIntentText(input) {
+  return [
+    input?.description,
+    input?.prompt,
+    input?.message,
+    input?.agent_type,
+    input?.subagent_type,
+    JSON.stringify(input?.items || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isExecutionDispatchIntent(input, metaName) {
+  if (metaName && isMetaAgent(metaName)) return false;
+
+  const target = String(
+    input?.agent_type || input?.subagent_type || input?.type || "",
+  )
+    .toLowerCase()
+    .trim();
+  const executionTargets = new Set([
+    "backend",
+    "frontend",
+    "worker",
+    "test",
+    "verify",
+  ]);
+  if (executionTargets.has(target)) return true;
+
+  const text = dispatchIntentText(input);
+  return /\b(implement|write|create|build|test|fix|debug|execute|run|generate|produce|code)\b/i.test(
+    text,
+  );
+}
+
 /**
  * Check if an agent is a meta-agent (governance layer)
  * Meta-agents are identified by the "meta-" prefix in their name
@@ -240,7 +278,7 @@ function warnMetaAgentExecution(agentName, stage) {
   const warning = `\n⚠️  [Meta_Kim] WARNING: Meta-agent "${agentName}" may be used for execution work in stage "${stage}"\n` +
     `Meta-agents (layer='meta') are for governance coordination only.\n` +
     `They should NOT perform direct execution tasks like writing code or running tests.\n` +
-    `Use governance meta owners plus run-scoped matchedSkills/tools for public Meta_Kim execution capability.\n` +
+    `Use governance meta owners plus run-scoped matchedCapabilities/capabilityBindings for public Meta_Kim execution capability.\n` +
     `If this is governance work (coordination, review, synthesis), you may ignore this warning.\n`;
 
   process.stderr.write(warning);
@@ -567,6 +605,21 @@ if (isAgentDispatchTool(toolName)) {
       .join(" "),
   );
 
+  if (
+    !state.queryBypass &&
+    !state.simpleMode &&
+    ["critical", "fetch", "thinking"].includes(state.currentStage) &&
+    isExecutionDispatchIntent(toolInput, metaName)
+  ) {
+    const readinessGate = checkPreExecutionReadiness(state);
+    if (!readinessGate.met) {
+      exitAfterDeny(
+        `Pre-execution readiness violation: design-time packets must be complete before execution dispatch. ` +
+          `Missing: ${readinessGate.missing.join(", ")}.`,
+      );
+    }
+  }
+
   // Check if a meta-agent is being dispatched for execution work
   // Warn if in execution stage and dispatching a meta-agent
   if (metaName && isMetaAgent(metaName)) {
@@ -628,6 +681,14 @@ if (isAgentDispatchTool(toolName)) {
         } else {
           exitAfterDeny(reason);
         }
+      }
+
+      const readinessGate = checkPreExecutionReadiness(state);
+      if (!readinessGate.met) {
+        exitAfterDeny(
+          `Pre-execution readiness violation: design-time packets must be complete before execution dispatch. ` +
+            `Missing: ${readinessGate.missing.join(", ")}.`,
+        );
       }
 
       const nodeBindingGate = checkCapabilityNodeBindings(state);

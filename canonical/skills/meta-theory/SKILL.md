@@ -26,12 +26,12 @@ Before doing ANY substantive work after this skill is activated:
 3. **The hook enforces this.** On Claude Code, the `enforce-agent-dispatch.mjs` PreToolUse hook will block Write/Edit/Bash when spine state is active and no agents have been dispatched. You cannot bypass it.
 4. **"Simple task" is not an excuse.** The DISPATH SELF-CHECK section below lists explicit FORBIDDEN patterns. No exception for perceived simplicity.
 5. **When in doubt, dispatch.** Cost of unnecessary dispatch < cost of governance bypass.
-6. **Sub-agent 内部也不许执行业务逻辑。** 即使你已被作为 sub-agent dispatch，meta-* agent 在 sub-agent 上下文中依然只能 coordinate，不能 execute：
-   - **Fetch 子 agent**: 返回 evidence，不固化最终决策
-   - **Thinking 子 agent**: 产出 plan / packet，不直接 patch 文件
-   - **Review 子 agent (meta-prism)**: 验证质量，不亲自跑 build/install/format 等产物变更命令；允许的只读取证（如 `pnpm typecheck`、`cargo check`、`git status`、`git log`）通过 hook 的 L2 Bash 白名单放行
-   - **Execution 子 agent (meta-conductor)**: 编排 Agent dispatch，不直接 Edit/Write 代码
-   - 如需写入或构建，必须再向下 dispatch 到非治理执行 agent（general-purpose / 专业 worker）。
+6. **Sub-agents must not execute business logic either.** Even after dispatch, meta-* agents in sub-agent context still coordinate; they do not execute:
+   - **Fetch sub-agent**: returns evidence, not final decisions.
+   - **Thinking sub-agent**: returns plans and packets, not file patches.
+   - **Review sub-agent (meta-prism)**: verifies quality and does not run build/install/format commands that change artifacts. Read-only evidence commands such as `pnpm typecheck`, `cargo check`, `git status`, and `git log` are allowed through the L2 Bash allow-list.
+   - **Execution sub-agent (meta-conductor)**: orchestrates agent dispatch and does not directly Edit/Write code.
+   - Work that writes files or builds artifacts must be delegated further to a non-governance execution agent, skill, command, MCP capability, runtime tool, or specialized worker.
 
 **Governance agents still act during governance stages.** `meta-warden`, `meta-conductor`, `meta-artisan`, `meta-sentinel`, and `meta-prism` are expected to do Critical, Fetch, Thinking, Review, Meta-Review, Verification, and Evolution governance work: clarify intent, collect capability evidence, design orchestration, approve gaps, review standards, and synthesize closure. The boundary is the big **Execution** stage: product/code/content deliverables, project architecture analysis deliverables, and test/build execution belong to execution agents, skills, commands, MCP capabilities, or tools selected by Thinking.
 
@@ -94,9 +94,9 @@ The goal is to inform, not to override. Users may have reasons for their choices
 
 Normal user-facing output must be a clean choice card, not a protocol dump. Do not show a `Preflight` block, `nativeChoiceSurface`, `conversation_fallback`, `Multi-Option Snapshot`, or other internal packet fields unless the user explicitly asks for debug, audit, protocol, or governance trace output. If a fallback matters to the user's expectation, say it in plain language, for example: "This is a chat confirmation card, not a popup."
 
-The choice card must be short and must show at least two viable options for the current decision. It must follow the runtime/tool selected output language first, then the user's explicit output-language choice, then the user's latest input language when no stronger language source exists. Keep only protocol identifiers such as `Critical`, `Fetch`, `Thinking`, and `Execution` in their canonical form when they are truly needed. Example labels such as `Option A` are placeholders; localize them in the actual response, for example `方案 A` when the selected or inferred language is Chinese.
+The choice card must be short and must show at least two viable options for the current decision. It must follow the runtime/tool selected output language first, then the user's explicit output-language choice, then the user's latest input language when no stronger language source exists. Keep only protocol identifiers such as `Critical`, `Fetch`, `Thinking`, and `Execution` in their canonical form when they are truly needed. Example labels such as `Option A` are placeholders; localize them in the actual response when the selected or inferred language is not English.
 
-Do not describe a Codex fallback card as a popup. In Codex, `conversation_fallback` means a chat card in the conversation. Call it a native popup only when `request_user_input` is available and has actually been invoked. 当前以聊天确认卡展示，不是弹窗。
+Do not describe a Codex fallback card as a popup. In Codex, `conversation_fallback` means a chat card in the conversation. Call it a native popup only when `request_user_input` is available and has actually been invoked. The current fallback is a chat confirmation card, not a popup.
 
 Normal public shape:
 
@@ -134,7 +134,7 @@ Distinguish early: **Meta Architecture** (agent governance, collaboration relati
 
 ## Clarity Gate (UNIFIED CONFIRMATION AFTER THINKING)
 
-**RULE**: For non-trivial non-query work, do not invoke a runtime question tool, native choice, or conversation fallback from intuition. First complete Fetch/content evidence, then Thinking/pre-decision option framing. That frame must explicitly list unresolved questions / 不明确问题, candidate solution paths / 候选解决方案, and `solutionChoiceState`. Only after that may the run invoke a SINGLE comprehensive confirmation with 4+ questions, each with 3-4 options.
+**RULE**: For non-trivial non-query work, do not invoke a runtime question tool, native choice, or conversation fallback from intuition. First complete Fetch/content evidence, then Thinking/pre-decision option framing. That frame must explicitly list unresolved questions, candidate solution paths, and `solutionChoiceState`. Only after that may the run invoke a SINGLE comprehensive confirmation with 4+ questions, each with 3-4 options.
 
 **Timing**: At the transition from Thinking → Execution, after:
 - Critical stage (task classification)
@@ -154,9 +154,9 @@ Context shown before the questions:
    - AI understanding: what the user wants and what result will be delivered
    - AI additions: missing details the system inferred or still needs
    - Evidence basis: content inspected, retrieval capabilities discovered, searches performed, constraints found, and remaining uncertainty
-   - Unresolved questions / 不明确问题: what still needs user choice, or an explicit empty list plus skip reason
+   - Unresolved questions: what still needs user choice, or an explicit empty list plus skip reason
    - Capability route: which agent/skill owner appears best after Fetch
-   - Candidate paths / Candidate solution paths / 候选解决方案: at least 2 viable ways to proceed
+   - Candidate paths / Candidate solution paths: at least 2 viable ways to proceed
 
 1. Outcome Confirmation
    - Option A: Keep the fix narrow — change only the part that blocks the requested result. Result: fastest delivery. Advantage: low disruption. Disadvantage: related rough edges may remain.
@@ -332,7 +332,7 @@ When a run touches an internal service boundary or a third-party provider, treat
 - Unknowns must be classified as `confirmed`, `needs_verification`, `blocking_unknown`, or `assumption_with_rollback`; `blocking_unknown` cannot pass public-ready completion.
 - Review must check source-of-truth, contract diff, signature/auth, idempotency, callback/webhook, error model, state machine, sandbox/contract test, security/secrets, and human owner approval gates as applicable.
 
-This layer is not an SDK registry, OpenAPI parser, or license to guess provider behavior. Real secrets, token values, API keys, passwords, and provider account credentials must never be stored in the packet; use references such as `authPolicyRef` or `secretRef` only. Concrete tools and provider skills remain run-scoped `matchedSkills` / `selectedSkill`, not durable agent identity.
+This layer is not an SDK registry, OpenAPI parser, or license to guess provider behavior. Real secrets, token values, API keys, passwords, and provider account credentials must never be stored in the packet; use references such as `authPolicyRef` or `secretRef` only. Concrete tools, provider skills, commands, MCP tools, runtime tools, file sets, and capability-index queries remain run-scoped `matchedCapabilities` plus `capabilityBindings` (legacy `matchedSkills` is compatibility evidence only), not durable agent identity.
 
 ## Gates
 
@@ -474,7 +474,7 @@ Do not use this Notice as a Decision surface. If the user must choose among mult
 
 **Step 3 — Hand evidence to Thinking:**
 - Record capability candidates, conflicts, gaps, and source confidence in `contentEvidencePacket`, `fetchRecord`, and related evidence fields.
-- Do not finalize `selectedOwner`, `matchedSkills`, `dispatchBoard`, or `workerTaskPackets` in Fetch.
+- Do not finalize `selectedOwner`, `matchedCapabilities`, `capabilityBindings`, legacy `matchedSkills`, `dispatchBoard`, or `workerTaskPackets` in Fetch.
 - Thinking determines needed execution capabilities, matches them to existing agents/skills/commands/MCP/tools, creates or upgrades only for gaps, and composes the orchestration plan.
 
 **Hardcoded agent names are FORBIDDEN.** Describe the needed capability and let Thinking resolve the run-scoped owner/loadout from the Fetch evidence inventory.
@@ -510,7 +510,7 @@ Capability index layers: (1) repo canonical (2) runtime mirrors (3) local global
 - `Thinking`: `meta-conductor`, `meta-genesis`, `meta-artisan`, `meta-sentinel`, and `meta-warden` for owner resolution and skill/loadout framing
 - `Review`: `meta-prism`, `meta-warden`, plus `meta-sentinel` or `meta-chrysalis` when safety or evolution writeback is relevant
 
-Each `agentBlueprintPacket.roles[]` entry must include `ownerSource`, `agentCopyPolicy`, `matchedSkills`, `skillSelectionScope`, and `governanceStageNodes` so Review can verify whether the owner is Meta_Kim governance-only, direct global reuse, or project-local evolution, and whether the selected skill set covers the orchestration node.
+Each `agentBlueprintPacket.roles[]` entry must include `ownerSource`, `agentCopyPolicy`, `matchedCapabilities` plus `capabilityBindings` (or legacy `matchedSkills` during compatibility migration), `skillSelectionScope`, and `governanceStageNodes` so Review can verify whether the owner is Meta_Kim governance-only, direct global reuse, or project-local evolution, and whether the selected capability set covers the orchestration node.
 
 **Business-flow capability matrix (mandatory for executable deliverables)**: Thinking must expand a user request into a complete business-flow capability matrix before choosing agents. Do not only search for the first obvious role. Infer lanes from the requested outcome, scope, constraints, and deliverable type, then capability-match every selected lane against the Fetch evidence inventory. Use the examples below as planning prompts:
 
@@ -522,11 +522,11 @@ Each `agentBlueprintPacket.roles[]` entry must include `ownerSource`, `agentCopy
 | `data_pipeline` | data source, schema, transform, storage, observability, quality tests, privacy/security, release |
 | `custom` | infer lanes from user outcome, then justify omissions |
 
-Output this as `businessFlowBlueprintPacket` with `requiredLanes`, `optionalLanes`, `omittedLanes` with reasons, `laneDependencies`, and `coverageJudgment`. Each required or optional lane object must include Fetch evidence inventory plus Thinking's resolution: `capabilitySearchQuery`, `candidateOwners`, `candidateSkills`, `selectedOwner`, `selectionReason`, and `coverageStatus` (`covered | partial | missing | omitted_with_reason`). A lane can be intentionally omitted only with a plain-language reason, e.g. "static page, no persisted user data". Do not fail a run only because it did not enumerate every example dimension.
+Output this as `businessFlowBlueprintPacket` with `requiredLanes`, `optionalLanes`, `omittedLanes` with reasons, `laneDependencies`, and `coverageJudgment`. Each required or optional lane object must include Fetch evidence inventory plus Thinking's resolution: `capabilitySearchQuery`, `candidateOwners`, `matchedCapabilities`, `capabilityBindings`, `selectedOwner`, `selectionReason`, and `coverageStatus` (`covered | partial | missing | omitted_with_reason`). A lane can be intentionally omitted only with a plain-language reason, e.g. "static page, no persisted user data". Do not fail a run only because it did not enumerate every example dimension. Legacy `candidateSkills` is compatibility evidence only.
 
 **Business-readable agent naming (hard rule)**:
 - User-visible role names must be coarse business role-family names: `frontend`, `backend`, `test`.
-- Chinese role-family names such as `前端`, `后端`, and `测试` are also valid when they match the user's language.
+- Localized role-family names may be recognized as input aliases when they match the user's language, but durable `roleDisplayName` values in Meta_Kim governance artifacts must stay as English role-family names.
 - Do not put concrete work items into `roleDisplayName`. Prefer the role family over any role-plus-feature, role-plus-page, or role-plus-installation label.
 - Put concrete scope in `roleInstanceId`, `shardScope`, `assignedResponsibilitySlice`, or the worker task text instead of creating a new visible role name.
 - Do not expose host-generated personal nicknames as the primary role name. Names like `Huygens`, `Mill`, or other random person-style aliases are allowed only in `runtimeInstanceAlias`.
@@ -543,7 +543,8 @@ Output this as `businessFlowBlueprintPacket` with `requiredLanes`, `optionalLane
   - `ownerResponsibilityDelta`: how the selected owner's current boundary must be reused, narrowed, or expanded.
   - `agentIterationPlan`: what to refine in the owner prompt/card before dispatch.
   - `ownerResolution`: `reuse_existing_owner | upgrade_existing_owner | create_owner_first`.
-  - `matchedSkills`: concrete skills/providers selected for this run only.
+  - `matchedCapabilities`: concrete run-scoped capability matches selected for this run only, across `agent | skill | command | mcp_tool | runtime_tool | file_set | capability_index_query`.
+  - `capabilityBindings`: concrete binding refs for each matched capability. Legacy `matchedSkills` may appear only as compatibility evidence.
   - `skillSelectionScope`: `run_scoped`.
   - `governanceStageNodes`: `Critical`, `Fetch`, `Thinking`, and/or `Review` nodes this governance owner participates in.
 
@@ -717,7 +718,7 @@ Writing this spine state also writes the public run status envelope to `.meta-ki
 | critical | `meta-warden` | `Agent(description="meta-warden coordinate", ...)` |
 | fetch | (none required, but capture Fetch evidence) | Research online/local sources and inventory capability evidence |
 | thinking | `meta-conductor` | `Agent(description="meta-conductor orchestrate", ...)` |
-| execution | at least 1 governed dispatch | `Agent(description="meta-conductor execution orchestration", ...)` with run-scoped matchedSkills |
+| execution | at least 1 governed dispatch | `Agent(description="meta-conductor execution orchestration", ...)` with run-scoped `matchedCapabilities` / `capabilityBindings` or legacy `matchedSkills` |
 | review | `meta-prism` | `Agent(description="meta-prism review", ...)` |
 | meta_review | `meta-warden` | `Agent(description="meta-warden meta-review", ...)` |
 | verification | `meta-warden` | `Agent(description="meta-warden verify", ...)` |
@@ -746,7 +747,7 @@ Stage 2 is the gate — do not skip to Stage 3/4. Stage 4 requires protocol arti
 
 **Protocol-first Dispatch**: produce `contentEvidencePacket` and `preDecisionOptionFrame` before the user choice surface; produce finalized `runHeader`, `businessFlowBlueprintPacket`, `agentBlueprintPacket`, `dispatchEnvelopePacket`, `dispatchBoard`, and `workerTaskPackets` (with `dependsOn`, `parallelGroup`, `mergeOwner`, short business role names, and instance/shard fields) only after the user choice or an allowed recorded skip. Stage 4 may not start until all protocol artifacts are ready.
 
-**Agent blueprint gate**: Before spawning agents, validate that every visible role has a short business `roleDisplayName`; every selected durable owner is one of the governance meta agents in public Meta_Kim; every role declares `ownerSource`, `agentCopyPolicy`, `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, `ownerResolution`, `matchedSkills`, `skillSelectionScope`, and `governanceStageNodes`; direct global reuse uses `use_global_directly`, project-local reuse without modification uses `already_project_local`, project-local copy is allowed only with `upgrade_existing_owner`, and new project-local execution agents use `create_project_local_agent` with `create_owner_first`; all repeated `ownerAgent` entries have distinct `roleInstanceId`, non-overlapping or explicitly locked `shardScope`, explicit `workspaceIsolation`, unique `artifactNamespace`, `collisionPolicy`, and a unified `mergeOwner`; and every omitted business lane has a human-readable reason. FAIL means return to Thinking and, when coverage is missing or owner creation/upgrade is needed, produce `capabilityGapPacket` plus an approved governance-owner card before Execution.
+**Agent blueprint gate**: Before spawning agents, validate that every visible role has a short business `roleDisplayName`; every selected durable owner is one of the governance meta agents in public Meta_Kim; every role declares `ownerSource`, `agentCopyPolicy`, `assignedResponsibilitySlice`, `ownerResponsibilityDelta`, `agentIterationPlan`, `ownerResolution`, `matchedCapabilities` plus `capabilityBindings` (or legacy `matchedSkills` during compatibility migration), `skillSelectionScope`, and `governanceStageNodes`; direct global reuse uses `use_global_directly`, project-local reuse without modification uses `already_project_local`, project-local copy is allowed only with `upgrade_existing_owner`, and new project-local execution agents use `create_project_local_agent` with `create_owner_first`; all repeated `ownerAgent` entries have distinct `roleInstanceId`, non-overlapping or explicitly locked `shardScope`, explicit `workspaceIsolation`, unique `artifactNamespace`, `collisionPolicy`, and a unified `mergeOwner`; and every omitted business lane has a human-readable reason. FAIL means return to Thinking and, when coverage is missing or owner creation/upgrade is needed, produce `capabilityGapPacket` plus an approved governance-owner card before Execution.
 
 **Option Exploration (MANDATORY)**: at Stage 3, enumerate ≥2 solution paths with Pros/Cons or a Decision Record (rejected alternatives must be documented). This is not optional — every non-trivial task requires explicit option comparison.
 
