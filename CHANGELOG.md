@@ -6,6 +6,33 @@ All notable changes to Meta_Kim are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 When you tag a release, add a new **`## [version] - YYYY-MM-DD`** section at the top (above older entries) and list changes there.
 
+## [2.2.2] - 2026-05-25
+
+### Fixed (Prism v2.2.0 review HIGH findings)
+
+- **H1 — Rule-ID vs packet-name vocabulary mapper** — `config/contracts/deliverable-type-profiles.json` now ships an explicit `ruleToPacketMap` block (schemaVersion bumped 1.0.0 → 1.1.0) mapping the 7 core contract rule IDs to their production spine-state packet names (`testStrategyDefined → testStrategyPacket`, `rollbackPlanDefined → rollbackPlanPacket`, `structureHygiene → structureHygienePacket`, `interfaceContract → interfaceContractPacket`, `sideEffectLedger → sideEffectLedgerPacket`, `permissionMatrix → permissionMatrixPacket`, `linkValidation → linkValidationPacket`). `canonical/runtime-assets/shared/lib/policy-registry.mjs` exposes a new `resolvePacketName(registry, ruleId)` helper with a `fallback_to_rule_id` policy so unmapped rules stay forward-compatible. This closes Prism finding D1/H1 and unblocks v2.3.0 R4 hook wiring.
+- **H2 — Q4 honesty in progress doc** — `progress-v2.2.0.md` now states explicitly that v2.2.0 ships only the *data layer* of Q4 (the `requiresConfirmation` field) and that *enforcement* (a PreToolUse interceptor pausing execution before first file write) is deferred to v2.3.0 R7. No stub handler in v2.2.2 (Warden gate ruling).
+- **H3 — Inference thresholds consume contract** — `canonical/runtime-assets/shared/lib/deliverable-type-profile.mjs::inferDeliverableTypeFromWorkType` accepts an optional 4th parameter `thresholdsConfig` and replaces the previous integer magic numbers with a normalized ratio computation (`absoluteFactor * 0.6 + marginFactor * 0.4`) compared against contract-declared `confidenceThresholds`. Backwards-compatible: existing 3-arg callers continue to work with default thresholds `{ high: 0.85, medium: 0.6, low: 0.0 }`. Return shape gains `ratio` and `thresholds` fields for testability.
+
+### Added
+
+- **`tests/poc-design-gate/05-rule-to-packet-mapper.test.mjs`** — 11 new tests covering the H1 mapper (contract block, 7 core IDs, `resolvePacketName` mapped/fallback/invalid input/null registry, full-profile coverage) and H3 contract-threshold consumption (custom thresholds honored, defaults applied when omitted). Combined suite now 59 tests (48 v2.2.0 existing + 11 new).
+
+### Changed
+
+- **Meta-theory skill localization fix** — `canonical/skills/meta-theory/SKILL.md` adds the Chinese localization example `方案 A` next to the English `Option A` placeholder, and adds the Chinese fallback-card line `当前以聊天确认卡展示，不是弹窗。` These were required by the existing `tests/meta-theory/02-clarity-gate.test.mjs` Codex multi-option choice surface assertions but had been missing since the canonical SKILL.md was last refreshed. All four runtime mirrors re-synced (`.claude/`, `.codex/`, `.cursor/`, `openclaw/`).
+- **Version metadata** — Bumped package version to `2.2.2`.
+
+### Verification
+
+- `node --test tests/poc-design-gate/*.test.mjs` → **59/59 pass** (48 v2.2.0 + 11 v2.2.2).
+- `npm run meta:check` → **20/20 pass**.
+- `npm run meta:test:meta-theory` → **796/796 pass**.
+
+### Architecture Notes
+
+v2.2.2 is a targeted patch closing all three HIGH findings from the v2.2.0 independent review. No production hooks were modified (`spine-state.mjs` and `enforce-agent-dispatch.mjs` remain frozen as Warden ruled). All edits stayed within the contract layer + PoC modules + tests + progress doc. v2.3.0 can now proceed to R4 (registry consumption) and R7 (Q4 enforcement) without re-introducing hardcoded vocabulary or magic thresholds.
+
 ## [2.2.1] - 2026-05-25
 
 ### Added

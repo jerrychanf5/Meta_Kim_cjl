@@ -6,6 +6,33 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
 发布新版本时，请在顶部（旧版本之前）添加新的 **`## [版本号] - YYYY-MM-DD`** 部分。
 
+## [2.2.2] - 2026-05-25
+
+### 修复（Prism v2.2.0 审查 HIGH 级别发现）
+
+- **H1 — 规则ID 到 packet 名称映射器** — `config/contracts/deliverable-type-profiles.json` 新增 `ruleToPacketMap` 块（schemaVersion 1.0.0 → 1.1.0），把 7 个核心契约规则 ID 显式映射到生产 spine-state packet 名（`testStrategyDefined → testStrategyPacket`、`rollbackPlanDefined → rollbackPlanPacket`、`structureHygiene → structureHygienePacket`、`interfaceContract → interfaceContractPacket`、`sideEffectLedger → sideEffectLedgerPacket`、`permissionMatrix → permissionMatrixPacket`、`linkValidation → linkValidationPacket`）。`canonical/runtime-assets/shared/lib/policy-registry.mjs` 新增导出 `resolvePacketName(registry, ruleId)` 辅助函数，未映射规则走 `fallback_to_rule_id` 策略保持向前兼容。关闭 Prism D1/H1 发现，为 v2.3.0 R4 钩子接线扫清障碍。
+- **H2 — 进度文档 Q4 诚实性** — `progress-v2.2.0.md` 明确声明 v2.2.0 只交付了 Q4 的*数据层*（`requiresConfirmation` 字段），而*强制层*（在首次写文件前暂停执行的 PreToolUse 拦截器）已延后到 v2.3.0 R7。v2.2.2 不发桩处理器（Warden 闸门裁定）。
+- **H3 — 推断阈值消费契约** — `canonical/runtime-assets/shared/lib/deliverable-type-profile.mjs::inferDeliverableTypeFromWorkType` 接受可选第 4 参数 `thresholdsConfig`，用归一化比值（`absoluteFactor * 0.6 + marginFactor * 0.4`）替换原先的整数魔数，与契约声明的 `confidenceThresholds` 对比。向后兼容：现有 3 参数调用方继续使用默认阈值 `{ high: 0.85, medium: 0.6, low: 0.0 }`。返回结构新增 `ratio` 和 `thresholds` 字段方便测试与审计。
+
+### 新增
+
+- **`tests/poc-design-gate/05-rule-to-packet-mapper.test.mjs`** — 11 个新测试，覆盖 H1 映射器（契约块、7 个核心 ID、`resolvePacketName` 命中/兜底/非法输入/空 registry、全 profile 覆盖）以及 H3 契约阈值消费（自定义阈值生效、缺省时使用默认）。合并后套件 59 个测试（v2.2.0 已有 48 + v2.2.2 新增 11）。
+
+### 变更
+
+- **元理论技能本地化补丁** — `canonical/skills/meta-theory/SKILL.md` 在英文 `Option A` 占位符旁补齐中文示例 `方案 A`，以及中文兜底说明 `当前以聊天确认卡展示，不是弹窗。`。`tests/meta-theory/02-clarity-gate.test.mjs` 关于 Codex multi-option choice surface 的断言一直需要这两段，但 canonical SKILL.md 上一次刷新时遗漏了。四个运行时镜像（`.claude/`、`.codex/`、`.cursor/`、`openclaw/`）已重新 sync。
+- **版本元数据** — 包版本升至 `2.2.2`。
+
+### 验证
+
+- `node --test tests/poc-design-gate/*.test.mjs` → **59/59 通过**（v2.2.0 48 + v2.2.2 11）。
+- `npm run meta:check` → **20/20 通过**。
+- `npm run meta:test:meta-theory` → **796/796 通过**。
+
+### 架构说明
+
+v2.2.2 是定向补丁，关闭 v2.2.0 独立审查的全部 3 个 HIGH 发现。生产钩子（`spine-state.mjs`、`enforce-agent-dispatch.mjs`）未被修改（Warden 冻结裁定）。所有改动停留在契约层 + PoC 模块 + 测试 + 进度文档。v2.3.0 现在可以推进 R4（registry 消费）和 R7（Q4 强制），不会再引入硬编码词汇或魔数阈值。
+
 ## [2.2.1] - 2026-05-25
 
 ### 新增
